@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>金刚智算云 · 运营管理</title>
+<style>
+  :root{
+    --cyan:#36e2f8; --teal:#2de2c5; --blue:#3f8efc;
+    --ok:#3ef0b0; --warn:#ffce54; --bad:#ff6b6b;
+    --ink:#eaf4ff; --ink-2:#a8c3e2; --ink-3:#7e9cc0;
+    --line:rgba(120,190,255,.16);
+    --card:linear-gradient(160deg, rgba(30,72,128,.5), rgba(13,38,74,.62));
+    --tile:rgba(8,30,62,.5);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,"PingFang SC","Helvetica Neue",Arial,sans-serif;
+    background:#c3cedf;color:var(--ink);font-size:14px;
+    display:flex;justify-content:center;min-height:100vh;
+  }
+  .phone{
+    width:100%;max-width:430px;min-height:100vh;position:relative;
+    display:flex;flex-direction:column;
+    background:
+      radial-gradient(120% 60% at 50% -5%, #15507f 0%, rgba(21,80,127,0) 55%),
+      linear-gradient(180deg,#0e2f5c 0%, #0c2950 45%, #0a2240 100%);
+    box-shadow:0 0 50px rgba(0,0,0,.3);
+  }
+  @media(min-width:470px){ .phone{min-height:900px;height:92vh;margin:2.5vh 0;border-radius:30px;overflow:hidden;} body{align-items:flex-start;} }
+
+  /* ===== 顶部导航 ===== */
+  .navbar{
+    background:linear-gradient(180deg,#0d3168,#0c2c5c);
+    color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;
+    font-weight:700;font-size:16px;position:sticky;top:0;z-index:20;
+    border-bottom:1px solid rgba(120,190,255,.12);
+  }
+  .navbar .back{cursor:pointer;font-size:21px;line-height:1;width:24px;color:#9fd9ff;}
+  .navbar .title{flex:1;text-align:center;letter-spacing:1px;}
+  .navbar .spacer{width:24px;}
+
+  .content{flex:1;overflow-y:auto;padding:12px 12px 90px;-webkit-overflow-scrolling:touch;}
+
+  /* ===== 底部 TabBar ===== */
+  .tabbar{
+    position:sticky;bottom:0;display:flex;z-index:20;
+    background:rgba(6,18,38,.92);backdrop-filter:blur(10px);
+    border-top:1px solid rgba(120,190,255,.14);
+    margin:0 8px 8px;border-radius:18px;border:1px solid rgba(120,190,255,.14);
+  }
+  .tabbar .tab{flex:1;text-align:center;padding:9px 0 10px;font-size:11px;color:#6f8cb2;cursor:pointer;}
+  .tabbar .tab .ico{font-size:19px;line-height:1.3;filter:grayscale(.4) brightness(.9);}
+  .tabbar .tab.on{color:#4be1ff;font-weight:700;text-shadow:0 0 12px rgba(75,225,255,.7);}
+  .tabbar .tab.on .ico{filter:none;}
+
+  /* ===== 通用 ===== */
+  .hero{
+    position:relative;overflow:hidden;border-radius:18px;padding:18px;
+    background:linear-gradient(120deg,#0f4d8f 0%,#0d6e9e 55%,#0aa6a0 100%);
+    border:1px solid rgba(140,230,255,.3);
+    box-shadow:0 8px 24px rgba(4,40,80,.45), inset 0 1px 0 rgba(255,255,255,.18);
+    color:#fff;
+  }
+  .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 90% at 85% 15%,rgba(94,255,231,.25),transparent 60%);pointer-events:none;}
+  .hero-title{font-size:21px;font-weight:800;letter-spacing:2px;}
+  .hero-sub{margin-top:7px;font-size:12px;color:#cfeffb;}
+  .hero .infinity{
+    position:absolute;right:14px;top:4px;font-size:46px;font-weight:700;line-height:1;
+    background:linear-gradient(100deg,#9be9ff,#2de2c5);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 10px rgba(45,226,197,.65));
+  }
+  .hero .dots{display:inline-block;margin-left:8px;letter-spacing:3px;color:rgba(190,250,255,.65);font-size:14px;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;padding:15px;margin-top:12px;
+    box-shadow:0 6px 20px rgba(3,18,42,.35), inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(6px);
+  }
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .card-title{font-size:15px;font-weight:700;position:relative;padding-left:11px;color:#fff;}
+  .card-title::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:4px;border-radius:3px;
+    background:linear-gradient(180deg,var(--cyan),var(--teal));box-shadow:0 0 8px rgba(54,226,248,.8);}
+  .card-more{font-size:12px;color:#5fd6ff;cursor:pointer;}
+
+  .metric-grid{display:flex;flex-wrap:wrap;gap:10px;}
+  .metric{
+    flex:1 1 calc(50% - 5px);min-width:calc(50% - 5px);
+    background:var(--tile);border:1px solid rgba(120,190,255,.14);
+    border-radius:13px;padding:13px 12px;position:relative;overflow:hidden;
+  }
+  .metric.thirds{flex-basis:calc(33.33% - 7px);min-width:calc(33.33% - 7px);}
+  .metric .bg-ico{position:absolute;right:6px;bottom:2px;font-size:40px;opacity:.14;pointer-events:none;}
+  .metric::after{content:"";position:absolute;inset:0;background:radial-gradient(70% 80% at 90% 100%,rgba(54,226,248,.10),transparent 60%);pointer-events:none;}
+  .metric-label{font-size:12px;color:var(--ink-2);position:relative;z-index:1;}
+  .metric-value{margin-top:6px;font-size:22px;font-weight:800;color:#fff;position:relative;z-index:1;text-shadow:0 0 14px rgba(80,200,255,.25);}
+  .metric-value .unit{font-size:12px;font-weight:500;color:#8fd8ff;margin-left:2px;}
+  .metric-value.brand{color:#7fe3ff;} .metric-value.accent{color:#3ef0b0;}
+
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+  .dot.ok{background:var(--ok);box-shadow:0 0 7px rgba(62,240,176,.9);}
+  .dot.warn{background:var(--warn);box-shadow:0 0 7px rgba(255,206,84,.9);}
+  .dot.bad{background:var(--bad);box-shadow:0 0 7px rgba(255,107,107,.9);}
+  .tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(54,196,248,.16);color:#6fd9ff;border:1px solid rgba(54,196,248,.3);}
+  .tag.ok{background:rgba(62,240,176,.13);color:var(--ok);border-color:rgba(62,240,176,.3);}
+  .tag.warn{background:rgba(255,206,84,.13);color:var(--warn);border-color:rgba(255,206,84,.3);}
+  .tag.bad{background:rgba(255,107,107,.13);color:var(--bad);border-color:rgba(255,107,107,.3);}
+  .bar-track{height:8px;border-radius:6px;background:rgba(255,255,255,.09);overflow:hidden;margin-top:5px;}
+  .bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#36a6f8,#36e2f8,#3ef0b0);box-shadow:0 0 8px rgba(54,226,248,.5);}
+  .muted{color:var(--ink-3);font-size:11px;}
+  .row{display:flex;align-items:center;} .between{justify-content:space-between;}
+  .legend{margin-top:12px;text-align:center;font-size:11px;color:var(--ink-3);}
+
+  /* ===== 算力地图 ===== */
+  .map-wrap{position:relative;height:235px;margin-top:2px;}
+  .map-wrap svg{width:100%;height:100%;display:block;}
+  .pin-chip{
+    position:absolute;display:flex;align-items:center;gap:4px;
+    background:rgba(10,38,74,.88);border:1px solid rgba(110,220,255,.45);
+    color:#dff6ff;font-size:12px;font-weight:600;padding:4px 9px;border-radius:8px;
+    box-shadow:0 2px 10px rgba(0,0,0,.4),0 0 12px rgba(54,226,248,.25);
+    white-space:nowrap;transform:translate(-50%,-50%);z-index:3;
+  }
+  .pin-chip .p-ico{color:#3ef0b0;font-size:11px;}
+  .map-p{
+    position:absolute;transform:translate(-50%,-50%);z-index:3;
+    font-size:16px;font-weight:800;color:#fff;text-shadow:0 0 12px rgba(94,224,255,.8);white-space:nowrap;
+  }
+  .map-p small{font-size:10px;font-weight:600;color:#ffd789;}
+  .site-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:#5ee0ff;transform:translate(-50%,-50%);z-index:2;
+    box-shadow:0 0 0 3px rgba(94,224,255,.25),0 0 14px rgba(94,224,255,.9);}
+  .site-dot::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:1.5px solid rgba(94,224,255,.55);animation:pulse 2s ease-out infinite;}
+  @keyframes pulse{0%{transform:scale(.5);opacity:1;}100%{transform:scale(1.6);opacity:0;}}
+  .flow{stroke-dasharray:5 6;animation:flow 1.6s linear infinite;}
+  @keyframes flow{to{stroke-dashoffset:-44;}}
+
+  /* ===== 算力健康（首页） ===== */
+  .health-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .h-tile{
+    background:var(--tile);border:1px solid rgba(120,190,255,.14);border-radius:13px;
+    padding:12px 11px;position:relative;overflow:hidden;
+  }
+  .h-tile.tall{grid-row:span 2;min-height:165px;}
+  .h-tile .bg-ico{position:absolute;right:4px;bottom:2px;font-size:44px;opacity:.13;pointer-events:none;}
+  .h-label{font-size:12px;color:var(--ink-2);}
+  .h-val{margin-top:6px;font-size:24px;font-weight:800;color:#fff;text-shadow:0 0 14px rgba(80,200,255,.3);}
+  .h-sub{margin-top:5px;font-size:10.5px;color:var(--ink-3);}
+  .h-art{position:absolute;left:8px;right:8px;bottom:8px;opacity:.8;}
+
+  /* ===== 昨日业务 ===== */
+  .biz-row{display:flex;align-items:center;padding:12px 0;}
+  .biz-row+.biz-row{border-top:1px solid var(--line);}
+  .biz-badge{
+    width:52px;flex-shrink:0;margin-right:8px;text-align:center;
+  }
+  .biz-badge .pill{
+    display:inline-block;padding:5px 10px;border-radius:10px;color:#fff;font-weight:800;font-size:13px;letter-spacing:1px;
+  }
+  .biz-badge.four .pill{background:linear-gradient(135deg,#2f7bff,#36c6f8);box-shadow:0 0 14px rgba(54,160,248,.55);}
+  .biz-badge.two .pill{background:linear-gradient(135deg,#0bbf8f,#3ef0b0);box-shadow:0 0 14px rgba(62,240,176,.45);}
+  .biz-badge .veh{font-size:17px;margin-top:3px;filter:drop-shadow(0 0 6px rgba(94,224,255,.6));}
+  .biz-metrics{flex:1;display:flex;align-items:center;justify-content:space-between;}
+  .biz-item{text-align:center;flex:1;}
+  .bi-v{font-size:18px;font-weight:800;color:#fff;} .bi-v .unit{font-size:11px;font-weight:500;color:#8fd8ff;margin-left:1px;}
+  .bi-l{font-size:11px;color:var(--ink-2);margin-top:3px;}
+  .gauge{position:relative;width:58px;height:58px;margin:0 auto;}
+  .gauge svg{width:100%;height:100%;}
+  .g-track{fill:none;stroke:rgba(255,255,255,.12);stroke-width:6;}
+  .g-fill{fill:none;stroke:url(#gaugeGrad);stroke-width:6;stroke-linecap:round;}
+  .g-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;}
+  .g-text span{font-size:9px;color:#8fd8ff;font-weight:600;}
+
+  /* ===== 二级 Tab / 切换 ===== */
+  .subtabs{display:flex;background:rgba(8,28,58,.7);border:1px solid var(--line);border-radius:12px;padding:4px;}
+  .subtab{flex:1;text-align:center;padding:9px 0;font-size:13px;color:var(--ink-2);border-radius:8px;cursor:pointer;}
+  .subtab.on{background:linear-gradient(135deg,#2f7bff,#36c6f8);color:#fff;font-weight:700;box-shadow:0 0 12px rgba(54,160,248,.5);}
+  .side-toggle{display:flex;gap:8px;margin-top:12px;}
+  .st{flex:1;text-align:center;padding:9px 0;background:rgba(8,28,58,.6);border-radius:9px;color:var(--ink-2);border:1px solid var(--line);cursor:pointer;}
+  .st.on{border-color:rgba(94,224,255,.6);color:#5ee0ff;font-weight:700;background:rgba(20,60,110,.55);box-shadow:0 0 10px rgba(94,224,255,.25);}
+
+  /* ===== 趋势 ===== */
+  .t-row{display:flex;align-items:center;padding:6px 0;}
+  .t-date{width:46px;font-size:12px;color:var(--ink-2);}
+  .t-bar{flex:1;height:10px;border-radius:6px;background:rgba(255,255,255,.09);overflow:hidden;margin:0 9px;}
+  .t-bar .bar-fill{margin-top:0;}
+  .t-val{width:62px;text-align:right;font-size:12px;font-weight:600;color:#dff0ff;}
+
+  /* ===== 榜单 ===== */
+  .rank{display:flex;align-items:center;padding:10px 0;}
+  .rank+.rank{border-top:1px solid var(--line);}
+  .r-no{width:25px;height:25px;border-radius:7px;margin-right:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--ink-3);background:rgba(255,255,255,.08);}
+  .r-no.n1{background:linear-gradient(135deg,#ffb800,#ff8a00);color:#fff;box-shadow:0 0 10px rgba(255,160,0,.5);}
+  .r-no.n2{background:linear-gradient(135deg,#c3cede,#93a0b3);color:#fff;}
+  .r-no.n3{background:linear-gradient(135deg,#e0a06a,#c97f3e);color:#fff;}
+  .r-body{flex:1;min-width:0;}
+  .r-name{font-size:12.5px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#dff0ff;}
+  .r-val{width:80px;text-align:right;margin-left:9px;}
+  .rv-n{font-size:16px;font-weight:800;color:#5ee0ff;}
+  .rv-u{font-size:10px;color:var(--ink-3);}
+
+  /* ===== 省份 ===== */
+  .mini-toggle{font-size:12px;}
+  .mini-toggle span{color:var(--ink-3);padding:2px 9px;border-radius:6px;cursor:pointer;}
+  .mini-toggle span.on{color:#04253f;background:#5ee0ff;font-weight:700;}
+  .prov{display:flex;align-items:flex-start;padding:10px 0;}
+  .prov+.prov{border-top:1px solid var(--line);}
+  .p-rank{width:23px;height:23px;border-radius:50%;margin-right:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#5ee0ff;background:rgba(94,224,255,.12);border:1px solid rgba(94,224,255,.3);}
+  .p-body{flex:1;min-width:0;} .p-name{font-size:13.5px;font-weight:600;color:#eaf4ff;}
+  .p-sub{margin-top:4px;font-size:11px;color:var(--ink-3);}
+
+  /* ===== 算力页 ===== */
+  .health-summary{display:flex;gap:16px;margin-top:11px;}
+  .hs{font-size:12px;color:#dff6ff;}
+  .ai-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;}
+  .ai-item+.ai-item{border-top:1px solid var(--line);}
+  .ai-left{flex:1;min-width:0;padding-right:10px;}
+  .ai-name{font-size:14px;font-weight:600;color:#eaf4ff;} .ai-note{margin-top:4px;font-size:11px;color:var(--ink-3);}
+  .ai-right{text-align:right;flex-shrink:0;}
+  .ai-val{font-size:18px;font-weight:800;}
+  .ai-val.ok{color:var(--ok);text-shadow:0 0 12px rgba(62,240,176,.4);}
+  .ai-val.warn{color:var(--warn);} .ai-val.bad{color:var(--bad);}
+  .ai-th{font-size:10px;color:var(--ink-3);margin-top:2px;}
+
+  /* ===== 资讯 ===== */
+  .search{background:rgba(8,28,58,.7);border:1px solid var(--line);border-radius:11px;padding:3px 12px;}
+  .search input{width:100%;border:0;outline:0;height:36px;font-size:13.5px;background:transparent;color:#eaf4ff;}
+  .search input::placeholder{color:#5f7ea6;}
+  .cats{white-space:nowrap;margin-top:10px;overflow-x:auto;display:flex;gap:7px;padding-bottom:2px;}
+  .cats::-webkit-scrollbar{display:none;}
+  .cat{display:inline-block;padding:6px 14px;background:rgba(8,28,58,.7);border:1px solid var(--line);border-radius:999px;font-size:12.5px;color:var(--ink-2);cursor:pointer;flex-shrink:0;}
+  .cat.on{background:linear-gradient(135deg,#2f7bff,#36c6f8);border-color:transparent;color:#fff;font-weight:700;box-shadow:0 0 12px rgba(54,160,248,.45);}
+  .top-item{display:flex;align-items:center;padding:8px 0;cursor:pointer;}
+  .top-item+.top-item{border-top:1px solid var(--line);}
+  .top-item .tag{margin-right:7px;flex-shrink:0;}
+  .top-title{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#eaf4ff;}
+  .news-item{padding:12px 0;cursor:pointer;}
+  .news-item+.news-item{border-top:1px solid var(--line);}
+  .ni-head{display:flex;align-items:center;gap:6px;}
+  .ni-date{margin-left:auto;font-size:11px;color:var(--ink-3);}
+  .ni-title{margin-top:7px;font-size:15px;font-weight:700;line-height:1.4;color:#fff;}
+  .ni-sum{margin-top:5px;font-size:12.5px;color:var(--ink-2);line-height:1.6;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+  .ni-foot{margin-top:7px;display:flex;align-items:center;flex-wrap:wrap;gap:7px;}
+  .ni-tag{font-size:11px;color:#5ee0ff;} .ni-src{margin-left:auto;font-size:11px;color:var(--ink-3);}
+  .empty{text-align:center;color:var(--ink-3);padding:30px 0;font-size:13px;}
+
+  /* ===== 详情 ===== */
+  .d-title{margin-top:9px;font-size:19px;font-weight:800;line-height:1.4;color:#fff;}
+  .d-meta{margin-top:6px;font-size:11.5px;color:var(--ink-3);}
+  .d-summary{margin-top:11px;padding:11px;border-radius:9px;background:rgba(54,160,248,.10);font-size:13.5px;line-height:1.7;border-left:3px solid #36c6f8;color:#dff0ff;}
+  .d-body{margin-top:12px;} .d-p{font-size:14px;line-height:1.85;margin-bottom:9px;white-space:pre-wrap;color:#d7e8fb;}
+  .d-actions{display:flex;gap:10px;margin-top:15px;}
+  .d-btn{flex:1;text-align:center;padding:13px 0;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;
+    background:linear-gradient(135deg,#2f7bff,#36c6f8);color:#fff;box-shadow:0 0 14px rgba(54,160,248,.4);}
+  .d-btn.ghost{background:rgba(8,28,58,.7);color:var(--ink-2);border:1px solid var(--line);box-shadow:none;}
+  .d-btn.faved{background:linear-gradient(135deg,#c9982a,#ffce54);color:#3a2c00;}
+
+  /* ===== 报表 ===== */
+  .report-text{white-space:pre-wrap;font-size:13.5px;line-height:1.85;color:#d7e8fb;}
+
+  /* ===== 我的 ===== */
+  .menu{display:flex;align-items:center;padding:11px 0;cursor:pointer;}
+  .menu+.menu{border-top:1px solid var(--line);}
+  .m-ico{width:38px;height:38px;border-radius:11px;margin-right:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;
+    background:rgba(54,196,248,.12);color:#5ee0ff;border:1px solid rgba(54,196,248,.25);}
+  .m-t{flex:1;font-size:14.5px;color:#eaf4ff;} .m-arrow{color:var(--ink-3);font-size:18px;}
+  .fav{display:flex;align-items:center;padding:9px 0;cursor:pointer;}
+  .fav+.fav{border-top:1px solid var(--line);}
+  .fav .tag{margin-right:8px;flex-shrink:0;}
+  .fav-t{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#eaf4ff;}
+
+  .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:rgba(8,30,60,.95);border:1px solid rgba(94,224,255,.4);color:#dff6ff;padding:9px 16px;border-radius:9px;font-size:13px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:0 0 18px rgba(54,226,248,.3);}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="navbar">
+    <div class="back" id="navBack" style="visibility:hidden">‹</div>
+    <div class="title" id="navTitle">金刚智算云 · 运营驾驶舱</div>
+    <div class="spacer"></div>
+  </div>
+  <div class="content" id="content"></div>
+  <div class="tabbar" id="tabbar"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- 公共 SVG 渐变定义 -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#36c6f8"/><stop offset="1" stop-color="#3ef0b0"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+/* ================= 数据层（来源：两个 Excel 驾驶舱 + 设计图算力地图） ================= */
+var GLOBAL = { dataDate:'2025-06-09', updatedAt:'2025-06-10 09:00' };
+
+var computeMap = [
+  { name:'北京通州', power:'20000P', note:'建设中', x:63, y:33 },
+  { name:'甘肃酒泉', power:'500P',  note:'',      x:36, y:40 },
+  { name:'新疆哈密', power:'4000P', note:'',      x:24, y:42 }
+];
+
+var charging = {
+  core:{
+    onlineTotal:{four:11222,two:42078}, monthNew:{four:76,two:0}, quarterNew:{four:308,two:0},
+    revenueTotal:{four:7251.91,two:591.5},
+    serviceFee:{yesterday:{four:4.6,two:1.15}, lastWeek:{four:36.78,two:8.92}, month:{four:46.27,two:11.26}},
+    serviceFeeAvg:{yesterday:{four:4.6,two:1.15}, lastWeek:{four:5.25,two:1.27}, month:{four:5.14,two:1.25}},
+    chargePerGun:{yesterday:{four:8.5,two:0.2}, lastWeek:{four:9.6,two:0.2}, month:{four:9.4,two:0.2}},
+    utilization:{yesterday:{four:7.5,two:2.9}, lastWeek:{four:8.5,two:3.4}, month:{four:8.3,two:3.3}}
+  },
+  trend:[
+    {date:'06-09',e4:52618.75,s4:45997.62,r2:11526.09},{date:'06-08',e4:55636.30,s4:48957.10,r2:11911.46},
+    {date:'06-07',e4:61958.77,s4:54578.31,r2:11520.06},{date:'06-06',e4:62405.14,s4:55479.76,r2:12144.57},
+    {date:'06-05',e4:59807.55,s4:52670.04,r2:13371.52},{date:'06-04',e4:56420.80,s4:49941.97,r2:13596.06},
+    {date:'06-03',e4:55952.26,s4:49737.13,r2:13060.22},{date:'06-02',e4:58315.72,s4:51979.65,r2:12839.64},
+    {date:'06-01',e4:60323.39,s4:53394.02,r2:12628.22},{date:'05-31',e4:64942.96,s4:57785.13,r2:12293.66},
+    {date:'05-30',e4:62837.58,s4:56366.46,r2:12685.09},{date:'05-29',e4:59877.61,s4:52933.69,r2:13319.41},
+    {date:'05-28',e4:55731.65,s4:49281.25,r2:12572.30},{date:'05-27',e4:57107.83,s4:50661.72,r2:13665.85},
+    {date:'05-26',e4:54406.26,s4:47433.90,r2:12701.93}
+  ],
+  topFee:[
+    {rank:1,name:'[广西-柳州]鹿寨碧桂园翡翠湾充电站(YG)',gun:30,value:0.25},
+    {rank:2,name:'[重庆-重庆]江北区观府国际充电站',gun:12,value:0.22},
+    {rank:3,name:'[广东-惠州]惠阳区碧桂园海德公馆充电站',gun:15,value:0.16},
+    {rank:4,name:'[广东-中山]中山市凤凰城云星苑5栋充电站',gun:12,value:0.16},
+    {rank:5,name:'[广西-钦州]钦北区碧桂园天玺湾充电站',gun:17,value:0.15},
+    {rank:6,name:'[广西-柳州]柳州碧桂园星悦湾充电站(YG)',gun:27,value:0.14},
+    {rank:7,name:'[广西-河池]河池碧桂园充电站(YG)',gun:15,value:0.14},
+    {rank:8,name:'[广西-柳州]柳江区柳江碧桂园充电站',gun:18,value:0.14},
+    {rank:9,name:'[广西-钦州]钦南区中梁钦州府充电站',gun:14,value:0.14},
+    {rank:10,name:'[广东-佛山]北滘镇顺德碧桂园正苑充电站(快充)',gun:4,value:0.14}
+  ],
+  topCharge:[
+    {rank:1,name:'[云南-西双版纳]景洪市西双版纳碧桂园充电站(快充)',gun:2,value:85.69},
+    {rank:2,name:'[广东-惠州]惠东县十里银滩维港湾充电站(快充)',gun:4,value:72.77},
+    {rank:3,name:'[广东-佛山]北滘镇顺德碧桂园正苑充电站(快充)',gun:4,value:65.58},
+    {rank:4,name:'[广东-佛山]北滘镇博智林创研中心充电站(快充)',gun:4,value:40.35},
+    {rank:5,name:'[广西-玉林]北流容县碧桂园1充电站(YG)',gun:3,value:36.05},
+    {rank:6,name:'[重庆-重庆]南岸区溪湖博望山第二充电站',gun:6,value:33.88},
+    {rank:7,name:'[湖北-武汉]蔡甸区越秀翰悦府充电站',gun:6,value:32.76},
+    {rank:8,name:'[广东-清远]佛冈县碧桂园清泉城鸣泉谷28街充电站',gun:6,value:32.74},
+    {rank:9,name:'[重庆-重庆]南岸区南山云璟充电站',gun:6,value:32.55},
+    {rank:10,name:'[重庆-重庆]江北区观府国际充电站',gun:12,value:32.48}
+  ],
+  provinces:[
+    {name:'上海市',gun:103,formal:14.42,monthAvg:13.62},{name:'广东省',gun:1058,formal:11.39,monthAvg:11.81},
+    {name:'天津市',gun:563,formal:11.20,monthAvg:11.32},{name:'广西省',gun:1615,formal:10.83,monthAvg:11.24},
+    {name:'江苏省',gun:1065,formal:9.79,monthAvg:10.39},{name:'云南省',gun:517,formal:10.51,monthAvg:10.37},
+    {name:'重庆市',gun:1170,formal:9.91,monthAvg:10.23},{name:'贵州省',gun:214,formal:9.38,monthAvg:9.83},
+    {name:'福建省',gun:58,formal:6.05,monthAvg:9.61},{name:'河北省',gun:188,formal:7.03,monthAvg:9.17},
+    {name:'四川省',gun:264,formal:8.47,monthAvg:9.08},{name:'浙江省',gun:565,formal:7.85,monthAvg:8.46},
+    {name:'湖北省',gun:979,formal:7.54,monthAvg:8.43},{name:'山西省',gun:24,formal:8.51,monthAvg:8.03},
+    {name:'安徽省',gun:850,formal:7.12,monthAvg:7.46},{name:'河南省',gun:115,formal:6.89,monthAvg:7.05},
+    {name:'江西省',gun:298,formal:5.86,monthAvg:6.96},{name:'海南省',gun:1198,formal:8.07,monthAvg:6.91},
+    {name:'湖南省',gun:336,formal:6.05,monthAvg:6.52},{name:'山东省',gun:195,formal:4.71,monthAvg:5.85},
+    {name:'陕西省',gun:46,formal:4.71,monthAvg:5.45},{name:'北京市',gun:24,formal:5.02,monthAvg:3.34},
+    {name:'甘肃省',gun:14,formal:0.34,monthAvg:0.38}
+  ],
+  newOnline:[
+    {name:'四川省',count:30,ratio:39.5},{name:'湖北省',count:25,ratio:32.9},
+    {name:'贵州省',count:15,ratio:19.7},{name:'江苏省',count:6,ratio:7.9}
+  ]
+};
+
+var compute = { modules:[
+  {module:'资产与业务',items:[
+    {name:'算力中心总节点',value:'256 台',threshold:'256 台',status:'ok',note:'2个128台 H200 整机裸金属集群'},
+    {name:'标称总算力(FP16)',value:'4096 PFLOPS',threshold:'-',status:'ok',note:'算力底座满配状态'},
+    {name:'裸金属综合上架率',value:'100%',threshold:'100%',status:'ok',note:'包月/长期交付，满额运行'},
+    {name:'SLA 整体在线率',value:'99.98%',threshold:'≥ 99.95%',status:'ok',note:'核心业务可用性保障'}
+  ]},
+  {module:'电力与能效',items:[
+    {name:'单机功耗基准',value:'10 kW',threshold:'10 kW',status:'ok',note:'物理服务器供电红线设定'},
+    {name:'IT 满载总功耗',value:'2560 kW',threshold:'≤ 2560 kW',status:'ok',note:'256台满载并发下的理论极限'},
+    {name:'实时 PUE',value:'1.12',threshold:'≤ 1.15',status:'ok',note:'绿色算力中心能效卡位'},
+    {name:'液冷进/出水温',value:'35℃ / 45℃',threshold:'30℃~48℃',status:'ok',note:'CDU二次侧冷却循环监控'}
+  ]},
+  {module:'网络与健康',items:[
+    {name:'IB/RoCE 连通率',value:'100%',threshold:'100%',status:'ok',note:'无骨干链路断开'},
+    {name:'RDMA 丢包率',value:'0.001%',threshold:'< 0.01%',status:'ok',note:'高速互联吞吐稳定性'},
+    {name:'GPU XID 报错拦截',value:'0 次/日',threshold:'-',status:'ok',note:'硬件健康度及自动隔离记录'}
+  ]},
+  {module:'运维与工单',items:[
+    {name:'例行巡检完成度',value:'100%',threshold:'100%',status:'ok',note:'动环及物理节点周度巡查'},
+    {name:'响应中运维工单',value:'0 个',threshold:'0 个',status:'ok',note:'客户提报的日常配置/重启需求'},
+    {name:'核心备件可用率',value:'100%',threshold:'≥ 95%',status:'ok',note:'光模块、线缆、备用网卡库存状态'}
+  ]}
+]};
+
+var news = [
+  {id:'n1',category:'能源电力',title:'多地优化分时电价：峰谷价差进一步拉大',importance:'必看',top:true,date:'2025-06-09',source:'行业媒体',tags:['电价','峰谷电'],
+   summary:'近期多省发布分时电价调整方案，峰谷价差扩大，午间出现深谷电价时段。对充电站而言，谷段集中补能与动态调价的收益空间随之提升。',
+   body:'多省份近期对分时电价机制进行优化，主要变化集中在峰谷时段划分与价差幅度上：午间新增低谷甚至深谷时段，晚高峰电价进一步上浮。\n\n对充电运营的影响：\n1）引导用户与车队在谷段集中补能，提升枪桩利用率；\n2）为站点动态调价提供政策依据，谷段可适度让利换量、峰段保障毛利；\n3）配合储能可进一步套利峰谷价差。\n\n建议结合本月各省利用率数据，挑选高价差省份试点谷段营销活动。',link:''},
+  {id:'n2',category:'算力中心',title:'液冷渗透率快速提升，PUE 成为 AIDC 核心卡位指标',importance:'重要',top:true,date:'2025-06-08',source:'行业媒体',tags:['液冷','PUE','AIDC'],
+   summary:'随着单机柜功率密度持续走高，冷板式液冷成为高功率 AI 集群的主流方案，头部 AIDC 的实时 PUE 普遍向 1.1 附近收敛。',
+   body:'高密度 AI 训练集群推动数据中心冷却方式从风冷向液冷迁移。冷板式液冷在改造成本与可维护性上更具优势，正成为新建 AIDC 的默认选项。\n\n关注点：\n1）实时 PUE 与进/出水温是衡量能效与稳定性的关键；\n2）液冷可支撑更高单机功耗，间接提升单位机房的算力密度；\n3）绿色能效指标正逐步进入客户选型与招标评分。\n\n对照我方算力看板：当前 PUE 1.12，水温 35/45℃，处于行业领先区间，可作为对外交付能力的宣传点。',link:''},
+  {id:'n3',category:'绿电碳电',title:'绿电交易规模扩大，零碳园区与算力绿电标签受关注',importance:'重要',top:false,date:'2025-06-06',source:'政策文件',tags:['绿电','零碳'],
+   summary:'绿电交易市场化程度持续提升，零碳园区、绿色数据中心等概念落地加速，为充电与算力业务提供"绿电标签"差异化机会。',
+   body:'绿电交易与绿证机制不断完善，企业采购绿电的渠道和确权方式更加清晰。\n\n潜在机会：\n1）充电站可探索"绿电充电"标签，面向有 ESG 诉求的车队客户；\n2）算力中心可结合绿电采购对外输出"绿色算力"，提升中标竞争力；\n3）零碳园区配套有望带来新增桩位与算力需求。',link:''},
+  {id:'n4',category:'充电桩',title:'车队与目的地场景成为充电运营增量主战场',importance:'普通',top:false,date:'2025-06-05',source:'行业媒体',tags:['车队','运营'],
+   summary:'出租网约车队、物流车队对稳定补能与结算的需求上升，目的地（社区、商业体）充电的利用率与黏性更高。',
+   body:'运营侧的增量正从公共快充向"车队 + 目的地"双轮驱动转移。车队客户带来稳定流水与高利用率，目的地场景带来用户黏性。\n\n结合本期榜单：单枪充电量 TOP 多为快充/目的地站点，月服务费 TOP 多为社区站点，可针对性做差异化运营策略。',link:''},
+  {id:'n5',category:'公司内参',title:'内部复盘：高利用率省份与高效站点画像',importance:'普通',top:false,date:'2025-06-04',source:'公司内部',tags:['复盘','运营'],
+   summary:'上海、广东、天津、广西本月日均靠前；单枪充电量 TOP 站点以快充和目的地为主。建议把成功画像沉淀为选址与运营标准。',
+   body:'本月各省份运营数据显示，上海(13.62)、广东(11.81)、天津(11.32)、广西(11.24)本月日均领先；甘肃、北京等仍处培育期。\n\n高效站点画像（来自单枪充电量 TOP10）：快充 + 目的地（景区/社区）+ 少枪高频。\n\n建议：把高利用率省份和高效站点的共性，整理为选址评分卡与运营 SOP，指导新增桩位投放。',link:''}
+];
+var newsCategories = ['全部','充电桩','能源电力','绿电碳电','算力中心','公司内参'];
+
+/* ================= 工具 ================= */
+function pctOfMax(values){ var max=Math.max.apply(null,values.concat([0])); if(max<=0)return values.map(function(){return 0;}); return values.map(function(v){return Math.round(v/max*100);}); }
+function comma(n){ return Number(n).toLocaleString('en-US'); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function getFavs(){ try{ return JSON.parse(localStorage.getItem('news_favs')||'[]'); }catch(e){ return []; } }
+function setFavs(a){ localStorage.setItem('news_favs',JSON.stringify(a)); }
+function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},1500); }
+function gauge(pct){
+  var r=24,c=2*Math.PI*r,f=Math.max(0,Math.min(pct,100))/100*c;
+  return '<div class="gauge"><svg viewBox="0 0 60 60">'+
+    '<circle class="g-track" cx="30" cy="30" r="'+r+'"/>'+
+    '<circle class="g-fill" cx="30" cy="30" r="'+r+'" stroke-dasharray="'+f.toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 30 30)"/>'+
+    '</svg><div class="g-text">'+pct+'<span>%利用率</span></div></div>';
+}
+
+/* ================= 状态 ================= */
+var S = { tab:'index', sub:null, detailId:null, chargingTab:0, side:'four', provSort:'monthAvg', newsCat:'全部', newsKeyword:'', reportType:0 };
+var TABS=[
+  {key:'index',ico:'🏠',text:'首页'},
+  {key:'charging',ico:'🔌',text:'充电桩'},
+  {key:'compute',ico:'🖥️',text:'算力'},
+  {key:'news',ico:'📰',text:'资讯'},
+  {key:'mine',ico:'👤',text:'我的'}
+];
+
+/* ================= 首页（按设计图排版） ================= */
+function viewIndex(){
+  var c=charging.core;
+  var totalGun=comma(c.onlineTotal.four+c.onlineTotal.two);
+  var monthNew=c.monthNew.four+c.monthNew.two;
+  var revenueTotal=(c.revenueTotal.four+c.revenueTotal.two).toFixed(2);
+  var monthFee=(c.serviceFee.month.four+c.serviceFee.month.two).toFixed(2);
+  function ai(name){ for(var i=0;i<compute.modules.length;i++){var m=compute.modules[i];for(var j=0;j<m.items.length;j++){if(m.items[j].name===name)return m.items[j];}} return{value:'-',status:'ok'};}
+  var sla=ai('SLA 整体在线率'),pue=ai('实时 PUE'),net=ai('IB/RoCE 连通率'),tk=ai('响应中运维工单');
+
+  var h='';
+  /* —— 品牌横幅 —— */
+  h+='<div class="hero"><div class="infinity">∞</div>'+
+     '<div class="hero-title">金刚智算云<span class="dots">●●●●</span></div>'+
+     '<div class="hero-sub">数据日期 '+GLOBAL.dataDate+'　｜　更新于 '+GLOBAL.updatedAt+'</div></div>';
+
+  /* —— 算力地图 —— */
+  h+='<div class="card"><div class="card-head"><div class="card-title">算力地图</div></div>'+mapHTML()+'</div>';
+
+  /* —— 算力健康 —— */
+  h+='<div class="card"><div class="card-head"><div class="card-title">算力健康</div><div class="card-more" data-go="compute">详情 ›</div></div>'+
+    '<div class="health-grid">'+
+      '<div class="h-tile tall"><div class="h-label"><span class="dot '+sla.status+'"></span>SLA 在线率</div><div class="h-val">'+sla.value+'</div>'+
+        '<div class="h-sub">互联网出口 · 专用存储网络</div>'+netArt()+'</div>'+
+      '<div class="h-tile tall"><div class="h-label"><span class="dot '+pue.status+'"></span>实时 PUE</div><div class="h-val">'+pue.value+'</div>'+
+        '<div class="h-sub">液冷进/出水温 35℃ / 45℃</div>'+cduArt()+'</div>'+
+      '<div class="h-tile"><div class="h-label"><span class="dot '+net.status+'"></span>IB/RoCE</div><div class="h-val">'+net.value+'</div><div class="bg-ico">🌐</div></div>'+
+      '<div class="h-tile"><div class="h-label"><span class="dot '+tk.status+'"></span>响应中工单</div><div class="h-val">'+tk.value+'</div><div class="bg-ico">🛠️</div></div>'+
+    '</div></div>';
+
+  /* —— 充电桩总览 —— */
+  h+='<div class="card"><div class="card-head"><div class="card-title">充电桩总览</div><div class="card-more" data-go="charging">详情 ›</div></div>'+
+    '<div class="metric-grid">'+
+      '<div class="metric"><div class="metric-label">上线总枪数</div><div class="metric-value">'+totalGun+'<span class="unit">枪</span></div><div class="bg-ico">🔌</div></div>'+
+      '<div class="metric"><div class="metric-label">当月新增</div><div class="metric-value">+'+monthNew+'<span class="unit">枪</span></div><div class="bg-ico">⚡</div></div>'+
+      '<div class="metric"><div class="metric-label">累计营销收入</div><div class="metric-value">'+revenueTotal+'<span class="unit">万</span></div><div class="bg-ico">🛣️</div></div>'+
+      '<div class="metric"><div class="metric-label">本月服务费</div><div class="metric-value accent">'+monthFee+'<span class="unit">万</span></div><div class="bg-ico">💹</div></div>'+
+    '</div></div>';
+
+  /* —— 昨日业务 —— */
+  h+='<div class="card"><div class="card-head"><div class="card-title">昨日业务</div></div>'+
+    bizRow('four','4轮','🚗',[[c.serviceFee.yesterday.four,'万','服务费'],[c.chargePerGun.yesterday.four,'kWh','单枪日均']],c.utilization.yesterday.four)+
+    bizRow('two','2轮','🛵',[[c.serviceFee.yesterday.two,'万','收入'],[c.chargePerGun.yesterday.two,'kWh','单枪日均']],c.utilization.yesterday.two)+
+  '</div>';
+  return h;
+}
+function bizRow(cls,label,veh,items,util){
+  var m=items.map(function(it){return '<div class="biz-item"><div class="bi-v">'+it[0]+'<span class="unit">'+it[1]+'</span></div><div class="bi-l">'+it[2]+'</div></div>';}).join('');
+  return '<div class="biz-row"><div class="biz-badge '+cls+'"><span class="pill">'+label+'</span><div class="veh">'+veh+'</div></div>'+
+    '<div class="biz-metrics">'+m+'<div class="biz-item">'+gauge(util)+'</div></div></div>';
+}
+
+/* —— 算力地图（低多边形风格中国版图 + 站点 + 流光连线）—— */
+function mapHTML(){
+  var svg=
+  '<svg viewBox="0 0 360 240" preserveAspectRatio="xMidYMid meet">'+
+    '<defs>'+
+      '<linearGradient id="mapFill" x1="0" y1="0" x2="1" y2="1">'+
+        '<stop offset="0" stop-color="#1c5390"/><stop offset=".55" stop-color="#15406f"/><stop offset="1" stop-color="#0f3158"/>'+
+      '</linearGradient>'+
+      '<linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">'+
+        '<stop offset="0" stop-color="#2de2c5"/><stop offset="1" stop-color="#5ee0ff"/>'+
+      '</linearGradient>'+
+    '</defs>'+
+    /* 3D 底座 */
+    '<path d="M30,101 L55,81 L95,66 L150,51 L200,61 L225,36 L255,31 L270,51 L258,76 L250,86 L235,101 L245,116 L235,131 L245,156 L225,181 L205,196 L175,201 L150,191 L130,201 L115,186 L95,171 L60,156 L40,136 L25,116 Z" fill="#071a33" transform="translate(0,7)" opacity=".9"/>'+
+    /* 主版图 */
+    '<path d="M30,101 L55,81 L95,66 L150,51 L200,61 L225,36 L255,31 L270,51 L258,76 L250,86 L235,101 L245,116 L235,131 L245,156 L225,181 L205,196 L175,201 L150,191 L130,201 L115,186 L95,171 L60,156 L40,136 L25,116 Z" fill="url(#mapFill)" stroke="rgba(140,220,255,.5)" stroke-width="1.2"/>'+
+    /* 内部省界装饰线 */
+    '<path d="M95,66 L120,110 L95,171 M150,51 L155,120 L130,201 M200,61 L185,130 L205,196 M120,110 L185,130 M155,120 L235,101" stroke="rgba(120,200,255,.14)" stroke-width="1" fill="none"/>'+
+    /* 海南 / 台湾 */
+    '<ellipse cx="186" cy="213" rx="7" ry="5" fill="url(#mapFill)" stroke="rgba(140,220,255,.5)" stroke-width="1"/>'+
+    '<ellipse cx="243" cy="178" rx="4.5" ry="7" fill="url(#mapFill)" stroke="rgba(140,220,255,.5)" stroke-width="1"/>'+
+    /* 流光连线：哈密/酒泉 → 通州 */
+    '<path class="flow" d="M86,101 Q150,48 227,79" stroke="url(#lineGrad)" stroke-width="2" fill="none" opacity=".95"/>'+
+    '<path class="flow" d="M130,96 Q175,55 227,79" stroke="url(#lineGrad)" stroke-width="2" fill="none" opacity=".95" style="animation-delay:.5s"/>'+
+    /* 通州向外辐射 */
+    '<path class="flow" d="M227,79 Q255,105 244,140" stroke="url(#lineGrad)" stroke-width="1.3" fill="none" opacity=".55" style="animation-delay:.2s"/>'+
+    '<path class="flow" d="M227,79 Q215,130 210,180" stroke="url(#lineGrad)" stroke-width="1.3" fill="none" opacity=".55" style="animation-delay:.8s"/>'+
+  '</svg>';
+
+  /* 站点点位 + 标签（绝对定位，百分比坐标基于 360x240 视图） */
+  var overlays=
+    '<div class="site-dot" style="left:24%;top:42%"></div>'+   /* 哈密 */
+    '<div class="site-dot" style="left:36%;top:40%"></div>'+   /* 酒泉 */
+    '<div class="site-dot" style="left:63%;top:33%"></div>'+   /* 通州 */
+    '<div class="map-p" style="left:38%;top:10%">500P</div>'+
+    '<div class="pin-chip" style="left:33%;top:21%"><span class="p-ico">📍</span>甘肃酒泉</div>'+
+    '<div class="map-p" style="left:74%;top:11%;font-size:13px">20000P <small>（建设中）</small></div>'+
+    '<div class="pin-chip" style="left:72%;top:22%"><span class="p-ico">📍</span>北京通州</div>'+
+    '<div class="pin-chip" style="left:21%;top:55%"><span class="p-ico">📍</span>新疆哈密</div>'+
+    '<div class="map-p" style="left:25%;top:67%">4000P</div>';
+
+  return '<div class="map-wrap">'+svg+overlays+'</div>';
+}
+/* 小装饰：网络拓扑 / 液冷 CDU */
+function netArt(){
+  return '<svg class="h-art" viewBox="0 0 120 46" style="height:46px">'+
+    '<g stroke="rgba(94,224,255,.55)" stroke-width="1" fill="none">'+
+    '<path d="M30,8 L20,24 M30,8 L45,24 M60,8 L45,24 M60,8 L75,24 M90,8 L75,24 M90,8 L100,24"/>'+
+    '<path d="M20,24 L20,38 M45,24 L45,38 M75,24 L75,38 M100,24 L100,38"/></g>'+
+    '<g fill="#5ee0ff">'+
+    '<circle cx="30" cy="8" r="3"/><circle cx="60" cy="8" r="3"/><circle cx="90" cy="8" r="3"/>'+
+    '<rect x="16" y="36" width="9" height="6" rx="1.5"/><rect x="41" y="36" width="9" height="6" rx="1.5"/>'+
+    '<rect x="71" y="36" width="9" height="6" rx="1.5"/><rect x="96" y="36" width="9" height="6" rx="1.5"/></g></svg>';
+}
+function cduArt(){
+  return '<svg class="h-art" viewBox="0 0 120 46" style="height:46px">'+
+    '<rect x="38" y="4" width="34" height="38" rx="4" fill="rgba(20,70,120,.6)" stroke="rgba(94,224,255,.5)"/>'+
+    '<rect x="44" y="10" width="22" height="5" rx="2" fill="rgba(94,224,255,.5)"/>'+
+    '<rect x="44" y="19" width="22" height="5" rx="2" fill="rgba(94,224,255,.35)"/>'+
+    '<rect x="44" y="28" width="22" height="5" rx="2" fill="rgba(94,224,255,.25)"/>'+
+    '<path d="M72,12 H96 M72,34 H96" stroke="#ff9a62" stroke-width="2"/>'+
+    '<path d="M24,12 H38 M24,34 H38" stroke="#5ee0ff" stroke-width="2"/>'+
+    '<text x="100" y="15" font-size="8" fill="#ffb98a">45℃</text>'+
+    '<text x="6" y="37" font-size="8" fill="#9fe5ff">35℃</text></svg>';
+}
+
+/* ================= 充电桩 ================= */
+function viewCharging(){
+  var tabs=['核心指标','收入趋势','站点榜单','省份运营'];
+  var h='<div class="subtabs">'+tabs.map(function(t,i){return '<div class="subtab '+(S.chargingTab===i?'on':'')+'" data-ctab="'+i+'">'+t+'</div>';}).join('')+'</div>';
+  if(S.chargingTab===0) h+=chargingCore();
+  else if(S.chargingTab===1) h+=chargingTrend();
+  else if(S.chargingTab===2) h+=chargingTops();
+  else h+=chargingProv();
+  return h;
+}
+function chargingCore(){
+  var c=charging.core, side=S.side, lbl=side==='four'?'4轮':'2轮';
+  function v(o){return o[side];}
+  var h='<div class="side-toggle"><div class="st '+(side==='four'?'on':'')+'" data-side="four">4轮</div><div class="st '+(side==='two'?'on':'')+'" data-side="two">2轮</div></div>';
+  h+='<div class="card"><div class="card-head"><div class="card-title">总规模 · 新增（'+lbl+'）</div></div><div class="metric-grid">'+
+    mc('thirds','上线总枪数',comma(v(c.onlineTotal)),'','brand')+
+    mc('thirds','当月新增','+'+v(c.monthNew),'')+
+    mc('thirds','当季新增','+'+v(c.quarterNew),'')+'</div></div>';
+  h+='<div class="card"><div class="card-head"><div class="card-title">收入（'+lbl+'）</div></div><div class="metric-grid">'+
+    mc('','累计营销收入',v(c.revenueTotal).toFixed(2),'万','accent')+
+    mc('','本月服务费',v(c.serviceFee.month),'万')+
+    mc('thirds','昨日服务费',v(c.serviceFee.yesterday),'万')+
+    mc('thirds','上周服务费',v(c.serviceFee.lastWeek),'万')+
+    mc('thirds','本月服务费',v(c.serviceFee.month),'万')+
+    mc('thirds','昨日日均',v(c.serviceFeeAvg.yesterday),'万')+
+    mc('thirds','上周日均',v(c.serviceFeeAvg.lastWeek),'万')+
+    mc('thirds','本月日均',v(c.serviceFeeAvg.month),'万')+'</div></div>';
+  h+='<div class="card"><div class="card-head"><div class="card-title">效率与利用率（'+lbl+'）</div></div><div class="metric-grid">'+
+    mc('thirds','单枪日均·昨日',v(c.chargePerGun.yesterday),'kWh')+
+    mc('thirds','单枪日均·上周',v(c.chargePerGun.lastWeek),'kWh')+
+    mc('thirds','单枪日均·当月',v(c.chargePerGun.month),'kWh')+
+    mc('thirds','利用率·昨日',v(c.utilization.yesterday),'%')+
+    mc('thirds','利用率·上周',v(c.utilization.lastWeek),'%')+
+    mc('thirds','利用率·当月',v(c.utilization.month),'%')+'</div></div>';
+  return h;
+}
+function mc(cls,label,val,unit,vcls){ return '<div class="metric '+cls+'"><div class="metric-label">'+label+'</div><div class="metric-value '+(vcls||'')+'">'+val+(unit?'<span class="unit">'+unit+'</span>':'')+'</div></div>'; }
+
+function chargingTrend(){
+  var rows=charging.trend.map(function(r){var total=r.e4+r.s4+r.r2;return {date:r.date,total:total,wan:(total/10000).toFixed(2)};});
+  var pcts=pctOfMax(rows.map(function(r){return r.total;}));
+  rows.forEach(function(r,i){r.pct=pcts[i];});
+  var totals=rows.map(function(r){return r.total;});
+  var max=Math.max.apply(null,totals),min=Math.min.apply(null,totals),avg=totals.reduce(function(a,b){return a+b;},0)/totals.length;
+  var maxR=rows.filter(function(r){return r.total===max;})[0], minR=rows.filter(function(r){return r.total===min;})[0];
+  var h='<div class="card"><div class="card-head"><div class="card-title">近15日收入概况</div></div><div class="metric-grid">'+
+    mc('thirds','最高日 '+maxR.date,maxR.wan,'万','brand')+
+    mc('thirds','最低日 '+minR.date,minR.wan,'万')+
+    mc('thirds','日均',(avg/10000).toFixed(2),'万','accent')+'</div></div>';
+  h+='<div class="card"><div class="card-head"><div class="card-title">每日总收入（4轮电费+服务费 + 2轮收入）</div></div>';
+  rows.forEach(function(r){ h+='<div class="t-row"><div class="t-date">'+r.date+'</div><div class="t-bar"><div class="bar-fill" style="width:'+r.pct+'%"></div></div><div class="t-val">'+r.wan+'万</div></div>'; });
+  return h+'</div>';
+}
+function chargingTops(){
+  function list(arr,unitFn,tagCls,tagText,title){
+    var pcts=pctOfMax(arr.map(function(x){return x.value;}));
+    var h='<div class="card"><div class="card-head"><div class="card-title">'+title+'</div><div class="tag '+tagCls+'">'+tagText+'</div></div>';
+    arr.forEach(function(x,i){
+      h+='<div class="rank"><div class="r-no n'+(x.rank<=3?x.rank:0)+'">'+x.rank+'</div>'+
+        '<div class="r-body"><div class="r-name">'+esc(x.name)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pcts[i]+'%"></div></div></div>'+
+        '<div class="r-val"><div class="rv-n">'+x.value+'</div><div class="rv-u">'+unitFn(x)+'</div></div></div>';
+    });
+    return h+'</div>';
+  }
+  return list(charging.topFee,function(x){return '万 · '+x.gun+'枪';},'','收入贡献型','月服务费 TOP10')+
+         list(charging.topCharge,function(x){return 'kWh · '+x.gun+'枪';},'ok','高效率型','单枪充电量 TOP10');
+}
+function chargingProv(){
+  var noPct=pctOfMax(charging.newOnline.map(function(x){return x.ratio;}));
+  var h='<div class="card"><div class="card-head"><div class="card-title">新上线桩数分布</div></div>';
+  charging.newOnline.forEach(function(x,i){ h+='<div class="rank"><div class="r-body"><div class="row between"><div class="r-name">'+x.name+'</div><div class="muted">'+x.count+'枪 · '+x.ratio+'%</div></div><div class="bar-track"><div class="bar-fill" style="width:'+noPct[i]+'%"></div></div></div></div>'; });
+  h+='</div>';
+  var key=S.provSort;
+  var list=charging.provinces.slice().sort(function(a,b){return b[key]-a[key];});
+  var pcts=pctOfMax(list.map(function(p){return p[key];}));
+  h+='<div class="card"><div class="card-head"><div class="card-title">省份运营排名</div><div class="mini-toggle">'+
+     '<span class="'+(key==='monthAvg'?'on':'')+'" data-psort="monthAvg">本月日均</span> <span class="'+(key==='gun'?'on':'')+'" data-psort="gun">枪数</span></div></div>';
+  list.forEach(function(p,i){ h+='<div class="prov"><div class="p-rank">'+(i+1)+'</div><div class="p-body"><div class="row between"><div class="p-name">'+p.name+'</div><div class="muted">'+p.gun+'枪 · 日均'+p.monthAvg+'</div></div><div class="bar-track"><div class="bar-fill" style="width:'+pcts[i]+'%"></div></div><div class="p-sub">正式运营 '+p.formal+' → 本月日均 '+p.monthAvg+'</div></div></div>'; });
+  return h+'</div>';
+}
+
+/* ================= 算力页 ================= */
+function viewCompute(){
+  var ok=0,warn=0,bad=0,total=0;
+  compute.modules.forEach(function(m){m.items.forEach(function(it){total++;if(it.status==='ok')ok++;else if(it.status==='warn')warn++;else bad++;});});
+  var h='<div class="hero"><div class="infinity">∞</div><div class="hero-title">算力中心健康看板</div><div class="hero-sub">数据日期 '+GLOBAL.dataDate+' ｜ 共 '+total+' 项指标</div>'+
+    '<div class="health-summary"><div class="hs"><span class="dot ok"></span>达标 '+ok+'</div><div class="hs"><span class="dot warn"></span>预警 '+warn+'</div><div class="hs"><span class="dot bad"></span>异常 '+bad+'</div></div></div>';
+  compute.modules.forEach(function(m){
+    h+='<div class="card"><div class="card-head"><div class="card-title">'+m.module+'</div></div>';
+    m.items.forEach(function(it){ h+='<div class="ai-item"><div class="ai-left"><div class="ai-name"><span class="dot '+it.status+'"></span>'+it.name+'</div><div class="ai-note">'+it.note+'</div></div><div class="ai-right"><div class="ai-val '+it.status+'">'+it.value+'</div><div class="ai-th">目标 '+it.threshold+'</div></div></div>'; });
+    h+='</div>';
+  });
+  return h+'<div class="legend">绿色=达标　黄色=接近阈值　红色=低于目标/超阈值</div>';
+}
+
+/* ================= 资讯 ================= */
+function viewNews(){
+  var list=news.slice();
+  if(S.newsCat!=='全部') list=list.filter(function(n){return n.category===S.newsCat;});
+  if(S.newsKeyword){ var k=S.newsKeyword.trim(); list=list.filter(function(n){return n.title.indexOf(k)>-1||n.summary.indexOf(k)>-1||(n.tags||[]).join(',').indexOf(k)>-1;}); }
+  list.sort(function(a,b){return (b.top?1:0)-(a.top?1:0)||(a.date<b.date?1:-1);});
+  var top=(S.newsCat==='全部'&&!S.newsKeyword)?news.filter(function(n){return n.top;}):[];
+  var h='<div class="search"><input id="newsSearch" placeholder="搜索资讯标题 / 标签" value="'+esc(S.newsKeyword)+'"/></div>';
+  h+='<div class="cats">'+newsCategories.map(function(c){return '<div class="cat '+(S.newsCat===c?'on':'')+'" data-ncat="'+c+'">'+c+'</div>';}).join('')+'</div>';
+  if(top.length){ h+='<div class="card"><div class="card-head"><div class="card-title">重点关注</div></div>'+top.map(function(n){
+    var tg=n.importance==='必看'?'<span class="tag bad">必看</span>':n.importance==='重要'?'<span class="tag warn">重要</span>':'';
+    return '<div class="top-item" data-news="'+n.id+'">'+tg+'<div class="top-title">'+esc(n.title)+'</div></div>';}).join('')+'</div>'; }
+  h+='<div class="card">';
+  if(list.length){ list.forEach(function(n){
+    var tg=n.importance==='必看'?'<span class="tag bad">必看</span>':n.importance==='重要'?'<span class="tag warn">重要</span>':'';
+    h+='<div class="news-item" data-news="'+n.id+'"><div class="ni-head"><span class="tag">'+n.category+'</span>'+tg+'<div class="ni-date">'+n.date+'</div></div>'+
+       '<div class="ni-title">'+esc(n.title)+'</div><div class="ni-sum">'+esc(n.summary)+'</div>'+
+       '<div class="ni-foot">'+(n.tags||[]).map(function(t){return '<span class="ni-tag">#'+t+'</span>';}).join('')+'<span class="ni-src">来源：'+n.source+'</span></div></div>';
+  }); } else { h+='<div class="empty">暂无匹配的资讯</div>'; }
+  h+='</div><div class="legend">资讯由运营后台手动录入，第一版不做自动抓取</div>';
+  return h;
+}
+function viewDetail(){
+  var n=news.filter(function(x){return x.id===S.detailId;})[0];
+  if(!n) return '<div class="empty">资讯不存在</div>';
+  var faved=getFavs().indexOf(n.id)>-1;
+  var tg=n.importance==='必看'?'<span class="tag bad">必看</span>':n.importance==='重要'?'<span class="tag warn">重要</span>':'';
+  var body=n.body.split('\n').map(function(p){return '<div class="d-p">'+esc(p)+'</div>';}).join('');
+  return '<div class="card"><div class="row" style="gap:6px"><span class="tag">'+n.category+'</span>'+tg+'</div>'+
+    '<div class="d-title">'+esc(n.title)+'</div><div class="d-meta">'+n.date+' ｜ 来源：'+n.source+'</div>'+
+    '<div class="d-summary">'+esc(n.summary)+'</div><div class="d-body">'+body+'</div>'+
+    '<div class="ni-foot" style="margin-top:6px">'+(n.tags||[]).map(function(t){return '<span class="ni-tag">#'+t+'</span>';}).join('')+'</div></div>'+
+    '<div class="d-actions"><div class="d-btn ghost" data-copylink="'+n.id+'">复制原文链接</div><div class="d-btn '+(faved?'faved':'')+'" data-fav="'+n.id+'">'+(faved?'已收藏 ★':'收藏 ☆')+'</div></div>'+
+    '<div class="legend">收藏后可在「我的」中作为汇报素材查阅</div>';
+}
+
+/* ================= 我的 ================= */
+function viewMine(){
+  var ids=getFavs(); var favs=news.filter(function(n){return ids.indexOf(n.id)>-1;});
+  var h='<div class="hero"><div class="infinity">∞</div><div class="hero-title">金刚智算云 · 运营管理</div><div class="hero-sub">内部管理工具 ｜ 数据更新于 '+GLOBAL.updatedAt+'</div></div>';
+  h+='<div class="card">'+
+    '<div class="menu" data-go="report"><div class="m-ico">报</div><div class="m-t">日报 / 周报</div><div class="m-arrow">›</div></div>'+
+    '<div class="menu" data-go="news"><div class="m-ico" style="background:rgba(255,107,107,.12);color:#ff9a9a;border-color:rgba(255,107,107,.25)">讯</div><div class="m-t">行业资讯</div><div class="m-arrow">›</div></div>'+
+    '<div class="menu" data-about="1"><div class="m-ico" style="background:rgba(255,255,255,.08);color:#a8c3e2;border-color:rgba(255,255,255,.15)">关</div><div class="m-t">关于本程序</div><div class="m-arrow">›</div></div>'+
+  '</div>';
+  h+='<div class="card"><div class="card-head"><div class="card-title">我的收藏</div><div class="muted">'+favs.length+' 条</div></div>';
+  if(favs.length){ favs.forEach(function(n){ h+='<div class="fav" data-news="'+n.id+'"><span class="tag">'+n.category+'</span><div class="fav-t">'+esc(n.title)+'</div></div>'; }); }
+  else h+='<div class="empty">还没有收藏，去资讯里收藏汇报素材吧</div>';
+  h+='</div><div class="legend">数据口径：充电桩运营驾驶舱 / 算力运营驾驶舱 · 数据日期 '+GLOBAL.dataDate+'</div>';
+  return h;
+}
+
+/* ================= 报表 ================= */
+function viewReport(){
+  var types=['充电桩日报','算力日报','周报'];
+  var h='<div class="subtabs">'+types.map(function(t,i){return '<div class="subtab '+(S.reportType===i?'on':'')+'" data-rtype="'+i+'">'+t+'</div>';}).join('')+'</div>';
+  h+='<div class="card"><div class="card-head"><div class="card-title">'+types[S.reportType]+'</div><div class="muted">'+GLOBAL.dataDate+'</div></div><div class="report-text" id="reportText">'+esc(reportText(S.reportType))+'</div></div>';
+  h+='<div class="d-btn" data-copyreport="1" style="margin-top:14px">复制全文</div><div class="legend">报表基于已有数据模板自动生成，第一版不接复杂 AI</div>';
+  return h;
+}
+function aiVal(name){ for(var i=0;i<compute.modules.length;i++){var m=compute.modules[i];for(var j=0;j<m.items.length;j++){if(m.items[j].name===name)return m.items[j].value;}} return '-'; }
+function reportText(type){
+  var c=charging.core,d=GLOBAL.dataDate;
+  var totals=charging.trend.map(function(r){return {date:r.date,total:r.e4+r.s4+r.r2};});
+  var max=totals.reduce(function(a,b){return b.total>a.total?b:a;}),min=totals.reduce(function(a,b){return b.total<a.total?b:a;});
+  var t1=charging.topFee[0];
+  if(type===0){
+    return '【金刚智算云 · 充电桩业务简报】\n截至 '+d+'：\n4轮上线总枪数 '+comma(c.onlineTotal.four)+' 枪，2轮上线总枪数 '+comma(c.onlineTotal.two)+' 枪。\n当月新增 4轮 '+c.monthNew.four+' 枪 / 2轮 '+c.monthNew.two+' 枪。\n\n4轮：昨日服务费 '+c.serviceFee.yesterday.four+' 万元，单枪日均充电量 '+c.chargePerGun.yesterday.four+' kWh，利用率 '+c.utilization.yesterday.four+'%。\n2轮：昨日收入 '+c.serviceFee.yesterday.two+' 万元，单枪日均充电量 '+c.chargePerGun.yesterday.two+' kWh，利用率 '+c.utilization.yesterday.two+'%。\n\n近15日收入：最高日 '+max.date+'（'+(max.total/10000).toFixed(2)+' 万元），最低日 '+min.date+'（'+(min.total/10000).toFixed(2)+' 万元）。\n本月服务费 TOP1 站点：'+t1.name+'（'+t1.value+' 万元）。';
+  } else if(type===1){
+    return '【金刚智算云 · 算力中心运行简报】\n截至 '+d+'：\n算力中心总节点 '+aiVal('算力中心总节点')+'，标称总算力 '+aiVal('标称总算力(FP16)')+'。\n裸金属综合上架率 '+aiVal('裸金属综合上架率')+'，SLA 整体在线率 '+aiVal('SLA 整体在线率')+'。\n实时 PUE '+aiVal('实时 PUE')+'，液冷进/出水温 '+aiVal('液冷进/出水温')+'。\nIB/RoCE 连通率 '+aiVal('IB/RoCE 连通率')+'，RDMA 丢包率 '+aiVal('RDMA 丢包率')+'，GPU XID 报错 '+aiVal('GPU XID 报错拦截')+'。\n当前响应中运维工单 '+aiVal('响应中运维工单')+'，核心备件可用率 '+aiVal('核心备件可用率')+'。\n整体状态：全部指标达标。';
+  } else {
+    var pt=charging.provinces.slice().sort(function(a,b){return b.monthAvg-a.monthAvg;}).slice(0,3).map(function(p){return p.name+'('+p.monthAvg+')';}).join('、');
+    return '【金刚智算云 · 本周运营周报】\n数据日期：'+d+'\n\n一、本周经营\n本月服务费 4轮 '+c.serviceFee.month.four+' 万元 / 2轮 '+c.serviceFee.month.two+' 万元；\n当月利用率 4轮 '+c.utilization.month.four+'% / 2轮 '+c.utilization.month.two+'%。\n\n二、本周榜单\n月服务费 TOP1：'+charging.topFee[0].name+'（'+charging.topFee[0].value+'万）；\n单枪充电量 TOP1：'+charging.topCharge[0].name+'（'+charging.topCharge[0].value+'kWh）；\n本月日均领先省份：'+pt+'。\n\n三、算力健康\nSLA '+aiVal('SLA 整体在线率')+'，PUE '+aiVal('实时 PUE')+'，IB/RoCE '+aiVal('IB/RoCE 连通率')+'，响应中工单 '+aiVal('响应中运维工单')+'。\n\n四、本周资讯（择要）\n1）分时电价峰谷价差拉大，关注谷段补能与调价空间；\n2）液冷渗透提升，PUE 成 AIDC 核心卡位指标；\n3）绿电交易扩大，探索充电/算力绿电标签。';
+  }
+}
+
+/* ================= 路由 / 渲染 ================= */
+var TITLES={index:'金刚智算云 · 运营驾驶舱',charging:'充电桩运营',compute:'算力健康',news:'行业资讯',mine:'我的',report:'报表汇总',detail:'资讯详情'};
+function render(){
+  var view=S.sub||S.tab, html='';
+  if(view==='index') html=viewIndex();
+  else if(view==='charging') html=viewCharging();
+  else if(view==='compute') html=viewCompute();
+  else if(view==='news') html=viewNews();
+  else if(view==='mine') html=viewMine();
+  else if(view==='report') html=viewReport();
+  else if(view==='detail') html=viewDetail();
+  document.getElementById('content').innerHTML=html;
+  document.getElementById('content').scrollTop=0;
+  document.getElementById('navTitle').textContent=TITLES[view]||'金刚智算云';
+  document.getElementById('navBack').style.visibility=S.sub?'visible':'hidden';
+  document.getElementById('tabbar').innerHTML=TABS.map(function(t){return '<div class="tab '+(!S.sub&&S.tab===t.key?'on':'')+'" data-tab="'+t.key+'"><div class="ico">'+t.ico+'</div><div>'+t.text+'</div></div>';}).join('');
+}
+
+/* ================= 事件 ================= */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-tab],[data-go],[data-ctab],[data-side],[data-psort],[data-ncat],[data-news],[data-fav],[data-copylink],[data-rtype],[data-copyreport],[data-about]');
+  if(!t) return;
+  var d=t.dataset;
+  if(d.tab){ S.sub=null; S.tab=d.tab; render(); return; }
+  if(d.go!==undefined){
+    var go=d.go;
+    if(go==='report'){ S.sub='report'; render(); return; }
+    if(d.ctab!==undefined) S.chargingTab=Number(d.ctab);
+    S.sub=null; S.tab=go; render(); return;
+  }
+  if(d.ctab!==undefined){ S.chargingTab=Number(d.ctab); render(); return; }
+  if(d.side){ S.side=d.side; render(); return; }
+  if(d.psort){ S.provSort=d.psort; render(); return; }
+  if(d.ncat){ S.newsCat=d.ncat; render(); return; }
+  if(d.news){ S.sub='detail'; S.detailId=d.news; render(); return; }
+  if(d.rtype!==undefined){ S.reportType=Number(d.rtype); render(); return; }
+  if(d.fav){ var f=getFavs(),id=d.fav; if(f.indexOf(id)>-1){f=f.filter(function(x){return x!==id;});toast('已取消收藏');}else{f.push(id);toast('已收藏');} setFavs(f); render(); return; }
+  if(d.copylink){ var n=news.filter(function(x){return x.id===d.copylink;})[0]; if(n&&n.link){copy(n.link);toast('已复制链接');}else toast('暂无原文链接'); return; }
+  if(d.copyreport){ copy(reportText(S.reportType)); toast('已复制，可粘贴到汇报'); return; }
+  if(d.about){ alert('金刚智算云运营管理小程序 · 第一版\n聚焦已有数据移动化、可视化、汇报化。\n数据来源：充电桩运营驾驶舱、算力运营驾驶舱。'); return; }
+});
+document.addEventListener('input',function(e){
+  if(e.target&&e.target.id==='newsSearch'){
+    S.newsKeyword=e.target.value;
+    var cont=document.getElementById('content');
+    var scroll=cont.scrollTop;
+    cont.innerHTML=viewNews();
+    var inp=document.getElementById('newsSearch'); if(inp){inp.focus(); inp.setSelectionRange(inp.value.length,inp.value.length);}
+    cont.scrollTop=scroll;
+  }
+});
+document.getElementById('navBack').addEventListener('click',function(){ S.sub=null; render(); });
+function copy(text){ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).catch(function(){fallbackCopy(text);});}else fallbackCopy(text); }
+function fallbackCopy(text){ var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
+
+render();
+</script>
+</body>
+</html>
