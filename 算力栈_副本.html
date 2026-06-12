@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>算力栈 · AI 成本测算与算力知识工具</title>
+<style>
+  :root{
+    --bg:#eef3fb; --card:#ffffff; --line:#dce6f5;
+    --pri:#1b6ce0; --pri-deep:#0d4cad; --pri-soft:#e8f1fe;
+    --cyan:#22b8e6; --silver:#8d949c; --silver-soft:#e8eaec;
+    --ink:#1c2b42; --ink-2:#5c6e8c; --ink-3:#93a3bd;
+    --gold:#e8a23c; --ok:#2f9e63;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,"PingFang SC","Helvetica Neue",Arial,sans-serif;
+    background:#d4dfee;color:var(--ink);font-size:14px;
+    display:flex;justify-content:center;min-height:100vh;
+  }
+  .phone{
+    width:100%;max-width:430px;min-height:100vh;position:relative;
+    display:flex;flex-direction:column;
+    background:
+      radial-gradient(130% 50% at 50% -8%, #ffffff 0%, rgba(255,255,255,0) 60%),
+      linear-gradient(180deg,#f6f9fe 0%, var(--bg) 50%, #e6edf9 100%);
+    box-shadow:0 0 50px rgba(20,50,100,.22);
+  }
+  @media(min-width:470px){ .phone{min-height:900px;height:92vh;margin:2.5vh 0;border-radius:30px;overflow:hidden;} body{align-items:flex-start;} }
+
+  /* ===== 顶部导航 ===== */
+  .navbar{
+    background:linear-gradient(180deg,#ffffff,#f5f9fe);
+    padding:14px 16px;display:flex;align-items:center;gap:10px;
+    font-weight:700;font-size:16px;position:sticky;top:0;z-index:20;
+    border-bottom:1px solid var(--line);color:var(--ink);
+  }
+  .navbar .back{cursor:pointer;font-size:21px;line-height:1;width:24px;color:var(--pri);}
+  .navbar .title{flex:1;text-align:center;letter-spacing:1px;}
+  .navbar .spacer{width:24px;}
+
+  .content{flex:1;overflow-y:auto;padding:14px 14px 96px;-webkit-overflow-scrolling:touch;}
+  .page{display:none;} .page.on{display:block;}
+
+  /* ===== 底部 TabBar ===== */
+  .tabbar{
+    position:sticky;bottom:0;display:flex;z-index:20;
+    background:rgba(255,255,255,.95);backdrop-filter:blur(10px);
+    margin:0 10px 10px;border-radius:18px;border:1px solid var(--line);
+    box-shadow:0 6px 18px rgba(30,70,140,.14);
+  }
+  .tabbar .tab{flex:1;text-align:center;padding:8px 0 9px;font-size:11px;color:var(--ink-3);cursor:pointer;}
+  .tabbar .tab .ico{height:24px;display:flex;align-items:center;justify-content:center;opacity:.55;filter:grayscale(.4);}
+  .tabbar .tab .ico svg{width:22px;height:22px;}
+  .tabbar .tab.on{color:var(--pri);font-weight:700;}
+  .tabbar .tab.on .ico{opacity:1;filter:none;}
+
+  /* ===== 首页 Hero（立体 + 光互连动效）===== */
+  .hero{
+    position:relative;overflow:hidden;border-radius:20px;padding:22px 18px 20px;
+    background:linear-gradient(135deg,#11489e 0%,#0a3174 60%,#082656 100%);
+    border:1px solid #0a3f93;color:#f2f7ff;
+    box-shadow:0 12px 30px rgba(13,76,173,.35), inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .hero .net{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+  .hero .glow{position:absolute;width:220px;height:220px;border-radius:50%;
+    background:radial-gradient(circle,rgba(58,160,255,.35),transparent 65%);
+    right:-60px;top:-80px;pointer-events:none;animation:breath 5s ease-in-out infinite;}
+  @keyframes breath{0%,100%{opacity:.6;transform:scale(1);}50%{opacity:1;transform:scale(1.12);}}
+  .hero-inner{position:relative;z-index:2;}
+  .hero .brand{display:flex;align-items:center;gap:10px;}
+  .hero .logo3d{width:40px;height:40px;flex:none;animation:floaty 4s ease-in-out infinite;}
+  @keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+  .hero-name{font-size:23px;font-weight:900;letter-spacing:3px;}
+  .hero-badge{font-size:10px;font-weight:600;color:#9cc6ff;border:1px solid rgba(140,190,255,.4);
+    border-radius:20px;padding:2px 9px;margin-left:auto;background:rgba(40,110,220,.25);}
+  .hero-slogan{margin-top:14px;font-size:16px;font-weight:800;line-height:1.5;color:#fff;text-shadow:0 2px 12px rgba(40,140,255,.4);}
+  .hero-sub{margin-top:8px;font-size:11.5px;color:#a9c9f5;line-height:1.7;}
+  .hero-btns{display:flex;gap:10px;margin-top:16px;}
+  .cta{
+    flex:1.4;border:none;cursor:pointer;
+    background:linear-gradient(160deg,#3f95ff,#1b6ce0);
+    color:#fff;font-size:15px;font-weight:800;letter-spacing:1px;
+    padding:13px 6px;border-radius:13px;
+    box-shadow:0 6px 16px rgba(20,100,230,.5), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .cta.sub{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(160,200,255,.35);
+    box-shadow:none;color:#cfe3ff;font-weight:700;}
+  .cta:active{transform:translateY(1px);}
+
+  /* 3D 图标通用 */
+  .i3d{display:inline-flex;align-items:center;justify-content:center;}
+  .i3d svg{width:100%;height:100%;display:block;filter:drop-shadow(0 3px 5px rgba(20,60,140,.25));}
+
+  /* ===== 区块标题 ===== */
+  .sec-head{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 10px;}
+  .sec-title{font-size:15.5px;font-weight:800;display:flex;align-items:center;gap:7px;}
+  .sec-title .i3d{width:21px;height:21px;}
+  .sec-more{font-size:12px;color:var(--pri);cursor:pointer;font-weight:600;}
+
+  /* ===== 工具入口卡 ===== */
+  .entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .entry{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:13px;cursor:pointer;position:relative;overflow:hidden;
+    box-shadow:0 4px 12px rgba(40,80,150,.08), inset 0 1px 0 #fff;
+  }
+  .entry::after{content:"";position:absolute;right:-22px;top:-22px;width:64px;height:64px;border-radius:50%;
+    background:radial-gradient(circle,rgba(60,140,250,.10),transparent 70%);}
+  .entry:active{transform:scale(.98);}
+  .entry .i3d{width:40px;height:40px;}
+  .entry .e-name{margin-top:9px;font-size:14.5px;font-weight:800;color:var(--ink);}
+  .entry .e-q{margin-top:4px;font-size:11px;color:var(--ink-2);line-height:1.5;}
+  .entry .e-arrow{position:absolute;right:11px;top:13px;color:var(--ink-3);font-size:13px;}
+  .entry.wide{grid-column:span 2;display:flex;align-items:center;gap:12px;}
+  .entry.wide .e-name{margin-top:0;}
+  .entry.wide .etxt{flex:1;}
+
+  /* ===== 资讯卡片 ===== */
+  .news-scroll{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .news-scroll::-webkit-scrollbar{display:none;}
+  .news-card{
+    flex:0 0 215px;background:var(--card);border:1px solid var(--line);border-radius:15px;
+    overflow:hidden;cursor:pointer;box-shadow:0 4px 12px rgba(40,80,150,.08);
+  }
+  .news-card:active{transform:scale(.98);}
+  .cover{height:92px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .cover .i3d{width:52px;height:52px;position:relative;z-index:2;}
+  .cover .cv-grid{position:absolute;inset:0;opacity:.35;
+    background-image:linear-gradient(rgba(255,255,255,.25) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.25) 1px,transparent 1px);
+    background-size:18px 18px;}
+  .cover .cv-tag{position:absolute;left:8px;top:8px;font-size:10px;font-weight:700;color:#fff;
+    background:rgba(0,20,60,.35);border:1px solid rgba(255,255,255,.35);border-radius:6px;padding:2px 7px;z-index:2;}
+  .news-card .n-body{padding:10px 11px 11px;}
+  .n-title{font-size:13px;font-weight:800;line-height:1.45;color:var(--ink);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .n-meta{margin-top:7px;font-size:10.5px;color:var(--ink-3);display:flex;gap:8px;}
+
+  /* 列表式文章行 */
+  .news-row{
+    display:flex;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:10px;margin-top:10px;cursor:pointer;box-shadow:0 3px 10px rgba(40,80,150,.07);
+  }
+  .news-row:active{transform:scale(.99);}
+  .news-row .cover{flex:0 0 96px;height:72px;border-radius:10px;}
+  .news-row .cover .i3d{width:36px;height:36px;}
+  .news-row .nr-body{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .nr-title{font-size:13.5px;font-weight:800;line-height:1.4;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .nr-sum{margin-top:4px;font-size:11px;color:var(--ink-2);line-height:1.5;
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+  .nr-meta{margin-top:auto;padding-top:5px;font-size:10.5px;color:var(--ink-3);display:flex;gap:8px;align-items:center;}
+  .nr-meta .tagchip{margin-left:auto;}
+
+  .tagchip{font-size:10px;font-weight:700;color:var(--pri);background:var(--pri-soft);
+    border:1px solid #cfe2fb;border-radius:6px;padding:2px 7px;white-space:nowrap;}
+
+  /* 专题卡 */
+  .topic-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .topic-card{
+    border-radius:15px;padding:13px;color:#fff;cursor:pointer;position:relative;overflow:hidden;
+    box-shadow:0 6px 14px rgba(20,70,160,.22);min-height:86px;
+  }
+  .topic-card:active{transform:scale(.98);}
+  .topic-card .t-name{font-size:13.5px;font-weight:800;line-height:1.4;position:relative;z-index:2;}
+  .topic-card .t-n{margin-top:6px;font-size:10.5px;color:rgba(255,255,255,.8);position:relative;z-index:2;}
+  .topic-card .i3d{position:absolute;right:8px;bottom:6px;width:42px;height:42px;opacity:.9;}
+  .topic-card .cv-grid{position:absolute;inset:0;opacity:.25;
+    background-image:linear-gradient(rgba(255,255,255,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.3) 1px,transparent 1px);
+    background-size:16px 16px;}
+
+  /* ===== 通用卡片 / 表单 ===== */
+  .card{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:15px;margin-top:13px;
+    box-shadow:0 4px 12px rgba(40,80,150,.08), inset 0 1px 0 #fff;
+  }
+  .card-title{font-size:15px;font-weight:800;position:relative;padding-left:11px;margin-bottom:12px;}
+  .card-title::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:4px;border-radius:3px;
+    background:linear-gradient(180deg,var(--pri),var(--pri-deep));}
+  .field{margin-top:12px;}
+  .field:first-of-type{margin-top:0;}
+  .f-label{font-size:12.5px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between;align-items:baseline;}
+  .f-label .hint{font-weight:400;font-size:11px;color:var(--ink-3);}
+  .f-row{display:flex;gap:9px;margin-top:7px;}
+  input[type=number],input[type=text],select{
+    width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--line);
+    background:#fbfdff;color:var(--ink);font-size:14px;font-weight:600;outline:none;
+    -webkit-appearance:none;appearance:none;
+  }
+  input:focus,select:focus{border-color:var(--pri);box-shadow:0 0 0 2px rgba(27,108,224,.13);}
+  select{background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+    background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px;}
+  .seg{display:flex;background:#e9eff9;border-radius:11px;padding:3px;margin-top:7px;border:1px solid var(--line);}
+  .seg div{flex:1;text-align:center;padding:8px 2px;border-radius:9px;font-size:12px;font-weight:700;color:var(--ink-2);cursor:pointer;}
+  .seg div.on{background:var(--pri);color:#fff;box-shadow:0 2px 6px rgba(13,76,173,.3);}
+
+  /* ===== 结果区 ===== */
+  .result{
+    margin-top:14px;border-radius:14px;padding:15px;
+    background:linear-gradient(150deg,#f3f8ff,#e7f0fd);
+    border:1px solid #d3e3f8;
+  }
+  .r-label{font-size:11.5px;color:var(--ink-2);font-weight:700;}
+  .r-big{margin-top:5px;font-size:29px;font-weight:900;color:var(--pri-deep);letter-spacing:.5px;}
+  .r-big .unit{font-size:13px;font-weight:600;color:var(--ink-2);margin-left:3px;}
+  .r-rows{margin-top:11px;border-top:1px dashed #c4d7ef;padding-top:10px;}
+  .r-row{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;color:var(--ink-2);gap:10px;}
+  .r-row b{color:var(--ink);font-weight:700;text-align:right;}
+  .r-note{margin-top:10px;font-size:11px;color:var(--ink-3);line-height:1.6;}
+  .formula{
+    margin-top:11px;font-size:11px;color:var(--ink-2);line-height:1.7;
+    background:#fff;border:1px dashed #c4d7ef;border-radius:10px;padding:9px 11px;
+  }
+  .formula b{color:var(--pri-deep);}
+  .disclaimer{
+    margin-top:12px;font-size:10.5px;color:var(--ink-3);line-height:1.7;text-align:center;
+    padding:9px 6px 2px;border-top:1px dashed var(--line);
+  }
+  .kn-links{margin-top:12px;}
+  .kn-links .kn-t{font-size:11.5px;font-weight:700;color:var(--ink-2);margin-bottom:6px;}
+  .kn-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--pri);
+    padding:7px 10px;background:var(--pri-soft);border:1px solid #cfe2fb;border-radius:10px;margin-top:6px;cursor:pointer;font-weight:600;}
+  .kn-item:active{opacity:.8;}
+
+  .vs-wrap{margin-top:12px;}
+  .vs-item{margin-top:10px;}
+  .vs-head{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;}
+  .vs-head span:last-child{color:var(--pri-deep);}
+  .vs-track{height:12px;border-radius:7px;background:#e9eff9;border:1px solid var(--line);overflow:hidden;margin-top:6px;}
+  .vs-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#4a93f5,var(--pri));}
+  .vs-fill.silver{background:linear-gradient(90deg,#c9ced4,var(--silver));}
+
+  .btn{
+    width:100%;border:none;cursor:pointer;margin-top:13px;
+    background:linear-gradient(160deg,#2a7bea,#0d4cad);color:#fff;
+    font-size:15px;font-weight:800;letter-spacing:2px;padding:13px;border-radius:13px;
+    box-shadow:0 5px 14px rgba(13,76,173,.32), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn.ghost{background:#e9eff9;color:var(--ink-2);box-shadow:none;border:1px solid var(--line);}
+  .btn.mini{width:auto;padding:8px 16px;font-size:12px;letter-spacing:0;margin-top:10px;border-radius:10px;}
+
+  /* 步骤条 */
+  .steps{display:flex;align-items:center;gap:6px;margin:4px 2px 2px;}
+  .steps .st{flex:1;height:5px;border-radius:3px;background:#dbe5f3;}
+  .steps .st.on{background:var(--pri);}
+  .step-label{font-size:11px;color:var(--ink-3);margin:8px 2px 0;}
+
+  /* ===== 资讯页 ===== */
+  .search-box{display:flex;gap:9px;align-items:center;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:10px 13px;box-shadow:0 3px 10px rgba(40,80,150,.07);}
+  .search-box input{border:none;background:transparent;padding:0;flex:1;font-size:13px;}
+  .search-box input:focus{box-shadow:none;}
+  .search-box .s-ico{color:var(--ink-3);font-size:15px;}
+  .chip-row{display:flex;gap:8px;overflow-x:auto;margin-top:11px;padding-bottom:4px;scrollbar-width:none;}
+  .chip-row::-webkit-scrollbar{display:none;}
+  .chip{flex:none;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);
+    border:1px solid var(--line);border-radius:20px;padding:7px 14px;cursor:pointer;}
+  .chip.on{color:#fff;background:var(--pri);border-color:var(--pri);box-shadow:0 3px 8px rgba(13,76,173,.3);}
+
+  /* ===== 文章详情（图文并茂）===== */
+  .art-cover{height:150px;border-radius:16px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+    box-shadow:0 8px 20px rgba(20,70,160,.2);}
+  .art-cover .i3d{width:72px;height:72px;position:relative;z-index:2;}
+  .art-title{font-size:19px;font-weight:900;line-height:1.45;margin-top:14px;}
+  .art-meta{display:flex;align-items:center;gap:10px;margin-top:9px;font-size:11px;color:var(--ink-3);flex-wrap:wrap;}
+  .art-meta .src{color:var(--pri);font-weight:700;}
+  .art-fav{margin-left:auto;font-size:12px;font-weight:700;color:var(--gold);cursor:pointer;
+    border:1px solid #f3ddb5;background:#fdf6e8;border-radius:8px;padding:4px 10px;}
+  .art-body{margin-top:6px;}
+  .art-body p{font-size:13.5px;line-height:1.85;color:#33455f;margin:13px 0;}
+  .art-body h3{font-size:15px;font-weight:800;margin:20px 0 4px;position:relative;padding-left:11px;}
+  .art-body h3::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:4px;border-radius:3px;
+    background:linear-gradient(180deg,var(--pri),var(--cyan));}
+  .fig{
+    margin:14px 0;border-radius:14px;border:1px solid var(--line);overflow:hidden;
+    background:var(--card);box-shadow:0 4px 12px rgba(40,80,150,.08);
+  }
+  .fig .fig-vis{padding:16px;display:flex;align-items:center;justify-content:center;gap:14px;
+    background:linear-gradient(150deg,#f3f8ff,#e7f0fd);}
+  .fig .fig-vis .i3d{width:46px;height:46px;}
+  .fig .fig-cap{font-size:11px;color:var(--ink-3);text-align:center;padding:8px 12px;border-top:1px solid var(--line);}
+  .fig table{width:100%;border-collapse:collapse;font-size:12px;}
+  .fig th{background:var(--pri-soft);color:var(--pri-deep);font-weight:800;padding:8px 6px;text-align:left;}
+  .fig td{padding:8px 6px;border-top:1px solid var(--line);color:var(--ink-2);}
+  .fig td b{color:var(--ink);}
+  .quote{
+    margin:14px 0;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.8;font-weight:600;
+    background:var(--pri-soft);border-left:4px solid var(--pri);color:var(--pri-deep);
+  }
+  .statbar{display:flex;align-items:center;gap:9px;margin:8px 0;}
+  .statbar .sb-l{flex:0 0 86px;font-size:11.5px;color:var(--ink-2);font-weight:600;}
+  .statbar .sb-track{flex:1;height:14px;border-radius:8px;background:#e9eff9;overflow:hidden;}
+  .statbar .sb-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#4a93f5,var(--pri));}
+  .statbar .sb-v{flex:0 0 56px;font-size:11.5px;font-weight:800;color:var(--pri-deep);text-align:right;}
+
+  /* ===== 我的 ===== */
+  .me-head{display:flex;align-items:center;gap:13px;background:linear-gradient(135deg,#1f74ec,#0d4cad);
+    border-radius:18px;padding:18px 16px;color:#fff;box-shadow:0 8px 20px rgba(13,76,173,.3);position:relative;overflow:hidden;}
+  .me-head .i3d{width:48px;height:48px;}
+  .me-head .m-name{font-size:16px;font-weight:800;}
+  .me-head .m-sub{font-size:11px;color:#bcd6f7;margin-top:4px;}
+  .me-row{display:flex;align-items:center;gap:11px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .me-row:last-child{border-bottom:none;}
+  .me-row .i3d{width:26px;height:26px;}
+  .me-row .mr-t{flex:1;font-size:13.5px;font-weight:700;}
+  .me-row .mr-n{font-size:11.5px;color:var(--ink-3);}
+  .empty{padding:26px 10px;text-align:center;font-size:12px;color:var(--ink-3);line-height:1.8;}
+  .report-item{border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:10px;background:var(--card);}
+  .report-item .rp-t{font-size:13px;font-weight:800;display:flex;justify-content:space-between;}
+  .report-item .rp-time{font-size:10.5px;color:var(--ink-3);font-weight:400;}
+  .report-item .rp-v{margin-top:6px;font-size:12px;color:var(--ink-2);}
+  .report-item .rp-del{margin-top:8px;font-size:11px;color:#c0392b;cursor:pointer;font-weight:600;}
+
+  .footer-quote{
+    margin-top:18px;text-align:center;font-size:11px;color:var(--ink-3);
+    padding:13px 10px;border-top:1px dashed var(--line);line-height:1.8;
+  }
+  .footer-quote b{color:var(--pri);}
+
+  .toast{
+    position:fixed;left:50%;bottom:110px;transform:translateX(-50%);z-index:99;
+    background:rgba(20,40,80,.92);color:#fff;font-size:12.5px;font-weight:600;
+    padding:10px 18px;border-radius:22px;opacity:0;transition:opacity .25s;pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+
+  /* 光互连流动 */
+  .flowline{stroke-dasharray:4 7;animation:dashflow 1.8s linear infinite;}
+  @keyframes dashflow{to{stroke-dashoffset:-44;}}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="navbar">
+    <div class="back" id="navBack" style="visibility:hidden" onclick="goBack()">‹</div>
+    <div class="title" id="navTitle">算力栈</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="content" id="content">
+
+    <!-- ============ 首页 ============ -->
+    <section class="page on" id="page-home">
+      <div class="hero">
+        <div class="glow"></div>
+        <!-- 光互连网络动效 -->
+        <svg class="net" viewBox="0 0 400 230" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="lg-line" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#2e8bff" stop-opacity=".1"/>
+              <stop offset=".5" stop-color="#5fd2ff" stop-opacity=".75"/>
+              <stop offset="1" stop-color="#2e8bff" stop-opacity=".1"/>
+            </linearGradient>
+            <radialGradient id="rg-node" cx=".4" cy=".35" r=".9">
+              <stop offset="0" stop-color="#bfe6ff"/><stop offset="1" stop-color="#2e8bff"/>
+            </radialGradient>
+          </defs>
+          <path id="p1" d="M -10 178 C 90 150, 160 205, 250 172 S 380 130, 420 150" fill="none" stroke="url(#lg-line)" stroke-width="1.4" class="flowline"/>
+          <path id="p2" d="M -10 210 C 120 190, 210 235, 320 200 S 400 180, 430 188" fill="none" stroke="url(#lg-line)" stroke-width="1.2" class="flowline" style="animation-duration:2.6s"/>
+          <path id="p3" d="M 240 8 C 290 40, 330 18, 412 52" fill="none" stroke="url(#lg-line)" stroke-width="1.2" class="flowline" style="animation-duration:2.2s"/>
+          <circle r="2.6" fill="#9fe0ff"><animateMotion dur="3.2s" repeatCount="indefinite"><mpath href="#p1"/></animateMotion></circle>
+          <circle r="2.2" fill="#7fd0ff"><animateMotion dur="4.2s" begin="1s" repeatCount="indefinite"><mpath href="#p2"/></animateMotion></circle>
+          <circle r="2.2" fill="#9fe0ff"><animateMotion dur="2.8s" begin=".4s" repeatCount="indefinite"><mpath href="#p3"/></animateMotion></circle>
+          <circle cx="250" cy="172" r="3.4" fill="url(#rg-node)"/>
+          <circle cx="320" cy="200" r="3" fill="url(#rg-node)"/>
+          <circle cx="92" cy="160" r="2.6" fill="url(#rg-node)"/>
+        </svg>
+        <div class="hero-inner">
+          <div class="brand">
+            <div class="logo3d i3d" data-i="logo"></div>
+            <div class="hero-name">算力栈</div>
+            <div class="hero-badge">测算 · 知识 · 不做交易</div>
+          </div>
+          <div class="hero-slogan">别等账单来了，<br>才知道 AI 花了多少钱。</div>
+          <div class="hero-sub">测 Token、算 Agent、估 GPU、电费和自建成本，顺便看懂算力行业。</div>
+          <div class="hero-btns">
+            <button class="cta" onclick="go('quick')">开始 1 分钟快测</button>
+            <button class="cta sub" onclick="go('tools')">进入工具箱</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-head"><div class="sec-title"><span class="i3d" data-i="toolbox" style="width:21px;height:21px"></span>常用工具</div>
+        <div class="sec-more" onclick="go('tools')">全部工具 ›</div></div>
+      <div class="entry-grid">
+        <div class="entry" onclick="go('t-token')">
+          <div class="i3d" data-i="token"></div>
+          <div class="e-name">Token 成本</div>
+          <div class="e-q">我每月会花多少 API 费用？</div>
+          <div class="e-arrow">›</div>
+        </div>
+        <div class="entry" onclick="go('t-agent')">
+          <div class="i3d" data-i="agent"></div>
+          <div class="e-name">Agent 成本</div>
+          <div class="e-q">一个智能体任务烧多少 Token？</div>
+          <div class="e-arrow">›</div>
+        </div>
+        <div class="entry" onclick="go('t-gpu')">
+          <div class="i3d" data-i="gpu"></div>
+          <div class="e-name">GPU 需求</div>
+          <div class="e-q">自建模型大概要几张 GPU？</div>
+          <div class="e-arrow">›</div>
+        </div>
+        <div class="entry" onclick="go('t-power')">
+          <div class="i3d" data-i="bolt"></div>
+          <div class="e-name">电力成本</div>
+          <div class="e-q">GPU 跑起来每月多少电费？</div>
+          <div class="e-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="sec-head"><div class="sec-title"><span class="i3d" data-i="news" style="width:21px;height:21px"></span>精选推文</div>
+        <div class="sec-more" onclick="go('news')">更多 ›</div></div>
+      <div class="news-scroll" id="homeNews"></div>
+
+      <div class="sec-head"><div class="sec-title"><span class="i3d" data-i="layers" style="width:21px;height:21px"></span>热门专题</div></div>
+      <div class="topic-grid" id="homeTopics"></div>
+
+      <div class="sec-head"><div class="sec-title"><span class="i3d" data-i="clock" style="width:21px;height:21px"></span>最近更新</div></div>
+      <div id="homeRecent"></div>
+
+      <div class="footer-quote">
+        测算结果仅供预算参考，不构成采购、投资或交易建议。<br>
+        算力是新的电力，<b>账单是新的电表</b>。
+      </div>
+    </section>
+
+    <!-- ============ 快测 ============ -->
+    <section class="page" id="page-quick">
+      <div class="seg" id="quickSeg" style="margin-top:2px">
+        <div class="on" data-v="qa">AI 应用月成本</div>
+        <div data-v="qb">Agent 单任务</div>
+        <div data-v="qc">GPU 电费</div>
+      </div>
+
+      <!-- 快测A：AI 应用月成本 -->
+      <div id="quick-qa">
+        <div class="card">
+          <div class="card-title">AI 应用月成本快测</div>
+          <div class="field"><div class="f-label">模型</div><select id="qaModel" onchange="calcQA()"></select></div>
+          <div class="field"><div class="f-label">每天请求次数</div>
+            <div class="f-row"><input type="number" id="qaReq" value="5000" min="1" oninput="calcQA()"></div></div>
+          <div class="field"><div class="f-label">平均输入 / 输出 <span class="hint">tokens / 次</span></div>
+            <div class="f-row"><input type="number" id="qaIn" value="1500" min="1" oninput="calcQA()">
+            <input type="number" id="qaOut" value="500" min="1" oninput="calcQA()"></div></div>
+        </div>
+        <div class="result">
+          <div class="r-label">预计每月费用</div>
+          <div class="r-big" id="qaCost">—</div>
+          <div class="r-rows">
+            <div class="r-row"><span>月 Token 用量</span><b id="qaTok">—</b></div>
+            <div class="r-row"><span>月费用</span><b id="qaMon">—</b></div>
+            <div class="r-row"><span>年费用</span><b id="qaYear">—</b></div>
+          </div>
+          <div class="formula"><b>公式：</b>月费用 = 日请求 × 30 ×（输入 Token × 输入单价 + 输出 Token × 输出单价）÷ 1,000,000<br><b>假设：</b>每月 30 天等量使用，按所选模型刊例价计。</div>
+          <button class="btn mini" onclick="saveReport('AI 应用月成本快测', qaSummary())">保存报告</button>
+          <div class="kn-links"><div class="kn-t">了解相关概念</div>
+            <div class="kn-item" onclick="openArticle('token-101')">📖 一文看懂 Token：AI 账单的最小计量单位</div>
+          </div>
+          <div class="disclaimer">测算结果由用户输入参数和公开参数计算生成，仅供预算参考，不构成采购、投资、交易或部署建议。</div>
+        </div>
+      </div>
+
+      <!-- 快测B：Agent 单任务 -->
+      <div id="quick-qb" style="display:none">
+        <div class="card">
+          <div class="card-title">Agent 单任务成本快测</div>
+          <div class="field"><div class="f-label">模型</div><select id="qbModel" onchange="calcQB()"></select></div>
+          <div class="field"><div class="f-label">单任务步骤数 / 每步调用次数</div>
+            <div class="f-row"><input type="number" id="qbSteps" value="10" min="1" oninput="calcQB()">
+            <input type="number" id="qbCalls" value="1" min="1" oninput="calcQB()"></div></div>
+          <div class="field"><div class="f-label">每次平均输入 / 输出 <span class="hint">tokens</span></div>
+            <div class="f-row"><input type="number" id="qbIn" value="2500" min="1" oninput="calcQB()">
+            <input type="number" id="qbOut" value="600" min="1" oninput="calcQB()"></div></div>
+          <div class="field"><div class="f-label">每天任务数</div>
+            <div class="f-row"><input type="number" id="qbTasks" value="100" min="1" oninput="calcQB()"></div></div>
+        </div>
+        <div class="result">
+          <div class="r-label">单任务成本</div>
+          <div class="r-big" id="qbCost">—</div>
+          <div class="r-rows">
+            <div class="r-row"><span>单任务 Token</span><b id="qbTok">—</b></div>
+            <div class="r-row"><span>调用链放大倍数</span><b id="qbAmp">—</b></div>
+            <div class="r-row"><span>月成本（30 天）</span><b id="qbMon">—</b></div>
+          </div>
+          <div class="formula"><b>公式：</b>单任务成本 = 步骤数 × 每步调用次数 ×（输入 Token × 输入单价 + 输出 Token × 输出单价）÷ 1,000,000<br><b>放大倍数</b> = 步骤数 × 每步调用次数（相对单次调用）。</div>
+          <button class="btn mini" onclick="saveReport('Agent 单任务快测', qbSummary())">保存报告</button>
+          <div class="kn-links"><div class="kn-t">了解相关概念</div>
+            <div class="kn-item" onclick="openArticle('agent-cost')">📖 为什么 Agent 比聊天贵 10 倍：上下文滚雪球</div>
+          </div>
+          <div class="disclaimer">测算结果由用户输入参数和公开参数计算生成，仅供预算参考，不构成采购、投资、交易或部署建议。</div>
+        </div>
+      </div>
+
+      <!-- 快测C：GPU 电费 -->
+      <div id="quick-qc" style="display:none">
+        <div class="card">
+          <div class="card-title">GPU 电费快测</div>
+          <div class="field"><div class="f-label">GPU 数量 / 单卡功耗 <span class="hint">W</span></div>
+            <div class="f-row"><input type="number" id="qcCnt" value="8" min="1" oninput="calcQC()">
+            <input type="number" id="qcTdp" value="700" min="1" oninput="calcQC()"></div></div>
+          <div class="field"><div class="f-label">电价 <span class="hint">元/度</span> · PUE</div>
+            <div class="f-row"><input type="number" id="qcPrice" value="0.8" step="0.1" min="0" oninput="calcQC()">
+            <input type="number" id="qcPue" value="1.3" step="0.1" min="1" oninput="calcQC()"></div></div>
+        </div>
+        <div class="result">
+          <div class="r-label">预计每月电费（24 小时满载）</div>
+          <div class="r-big" id="qcCost">—</div>
+          <div class="r-rows">
+            <div class="r-row"><span>月耗电量</span><b id="qcKwh">—</b></div>
+            <div class="r-row"><span>年电费</span><b id="qcYear">—</b></div>
+          </div>
+          <div class="formula"><b>公式：</b>月电费 = GPU 数 × 单卡功耗 ÷ 1000 × PUE × 24 小时 × 30 天 × 电价<br><b>假设：</b>满载连续运行；未含服务器其他部件功耗，完整口径请用「电力成本计算器」。</div>
+          <button class="btn mini" onclick="saveReport('GPU 电费快测', qcSummary())">保存报告</button>
+          <div class="kn-links"><div class="kn-t">了解相关概念</div>
+            <div class="kn-item" onclick="openArticle('pue-explain')">📖 PUE 是什么？数据中心电费的"隐形系数"</div>
+          </div>
+          <div class="disclaimer">测算结果由用户输入参数和公开参数计算生成，仅供预算参考，不构成采购、投资、交易或部署建议。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 工具箱 ============ -->
+    <section class="page" id="page-tools">
+      <div class="entry-grid" style="margin-top:2px">
+        <div class="entry" onclick="go('t-token')">
+          <div class="i3d" data-i="token"></div>
+          <div class="e-name">Token 成本计算器</div>
+          <div class="e-q">单次 / 日 / 月 / 年成本与占比</div><div class="e-arrow">›</div>
+        </div>
+        <div class="entry" onclick="go('t-agent')">
+          <div class="i3d" data-i="agent"></div>
+          <div class="e-name">Agent 成本计算器</div>
+          <div class="e-q">多轮调用链的成本结构</div><div class="e-arrow">›</div>
+        </div>
+        <div class="entry" onclick="go('t-gpu')">
+          <div class="i3d" data-i="gpu"></div>
+          <div class="e-name">GPU 需求计算器</div>
+          <div class="e-q">显存估算 + 8 卡整机台数</div><div class="e-arrow">›</div>
+        </div>
+        <div class="entry" onclick="go('t-power')">
+          <div class="i3d" data-i="bolt"></div>
+          <div class="e-name">电力成本计算器</div>
+          <div class="e-q">日 / 月耗电与电费</div><div class="e-arrow">›</div>
+        </div>
+        <div class="entry" onclick="go('t-compare')">
+          <div class="i3d" data-i="scale"></div>
+          <div class="e-name">API vs 自建对比器</div>
+          <div class="e-q">同一张表对比两种方案</div><div class="e-arrow">›</div>
+        </div>
+        <div class="entry" onclick="go('t-params')">
+          <div class="i3d" data-i="db"></div>
+          <div class="e-name">参数库</div>
+          <div class="e-q">模型价格 / GPU 规格 / 默认值</div><div class="e-arrow">›</div>
+        </div>
+      </div>
+      <div class="footer-quote">所有参数可手动修改；工具只计算，不提供采购或部署建议。</div>
+    </section>
+
+    <!-- ============ 工具：Token ============ -->
+    <section class="page" id="page-t-token">
+      <div class="card">
+        <div class="card-title">Token 成本计算器</div>
+        <div class="field"><div class="f-label">模型 <span class="hint">选择后单价可改</span></div>
+          <select id="tModel" onchange="tFill()"></select></div>
+        <div class="field"><div class="f-label">输入 / 输出单价 <span class="hint">元 / 百万 Token</span></div>
+          <div class="f-row"><input type="number" id="tPin" value="2" step="0.1" min="0" oninput="calcToken()">
+          <input type="number" id="tPout" value="8" step="0.1" min="0" oninput="calcToken()"></div></div>
+        <div class="field"><div class="f-label">单次输入 / 输出 <span class="hint">tokens</span></div>
+          <div class="f-row"><input type="number" id="tIn" value="1200" min="1" oninput="calcToken()">
+          <input type="number" id="tOut" value="400" min="1" oninput="calcToken()"></div></div>
+        <div class="field"><div class="f-label">日请求次数 / 月使用天数</div>
+          <div class="f-row"><input type="number" id="tReq" value="2000" min="1" oninput="calcToken()">
+          <input type="number" id="tDays" value="30" min="1" max="31" oninput="calcToken()"></div></div>
+      </div>
+      <div class="result">
+        <div class="r-label">预计每月 API 费用</div>
+        <div class="r-big" id="tCost">—</div>
+        <div class="r-rows">
+          <div class="r-row"><span>单次请求成本</span><b id="tPer">—</b></div>
+          <div class="r-row"><span>日成本</span><b id="tDay">—</b></div>
+          <div class="r-row"><span>年成本</span><b id="tYearV">—</b></div>
+          <div class="r-row"><span>输入 / 输出成本占比</span><b id="tRatio">—</b></div>
+        </div>
+        <div class="vs-wrap">
+          <div class="vs-item"><div class="vs-head"><span>输入成本</span><span id="tCin">—</span></div>
+            <div class="vs-track"><div class="vs-fill" id="tBarIn" style="width:50%"></div></div></div>
+          <div class="vs-item"><div class="vs-head"><span>输出成本</span><span id="tCout">—</span></div>
+            <div class="vs-track"><div class="vs-fill silver" id="tBarOut" style="width:50%"></div></div></div>
+        </div>
+        <div class="formula"><b>公式：</b>月成本 = 日请求 × 月使用天数 ×（输入 Token × 输入单价 + 输出 Token × 输出单价）÷ 1,000,000<br><b>假设：</b>单价为公开刊例价或用户自填，未含缓存折扣与阶梯价。</div>
+        <button class="btn mini" onclick="saveReport('Token 成本', tSummary())">保存报告</button>
+        <div class="kn-links"><div class="kn-t">了解相关概念</div>
+          <div class="kn-item" onclick="openArticle('token-101')">📖 什么是输入 Token 和输出 Token</div>
+          <div class="kn-item" onclick="openArticle('api-vs-self')">📖 AI 应用为什么会产生 Token 账单</div>
+        </div>
+        <div class="disclaimer">测算结果由用户输入参数和公开参数计算生成，仅供预算参考，不构成采购、投资、交易或部署建议。</div>
+      </div>
+    </section>
+
+    <!-- ============ 工具：Agent ============ -->
+    <section class="page" id="page-t-agent">
+      <div class="card">
+        <div class="card-title">Agent 成本计算器</div>
+        <div class="field"><div class="f-label">模型 <span class="hint">单价可在参数库查看</span></div>
+          <select id="aModel" onchange="calcAgent()"></select></div>
+        <div class="field"><div class="f-label">单任务步骤数 / 每步调用次数</div>
+          <div class="f-row"><input type="number" id="aSteps" value="12" min="1" oninput="calcAgent()">
+          <input type="number" id="aCalls" value="1" min="1" oninput="calcAgent()"></div></div>
+        <div class="field"><div class="f-label">首步上下文 / 每步输出 <span class="hint">tokens</span></div>
+          <div class="f-row"><input type="number" id="aCtx" value="3000" min="1" oninput="calcAgent()">
+          <input type="number" id="aOut" value="600" min="1" oninput="calcAgent()"></div></div>
+        <div class="field"><div class="f-label">日任务数量 / 月使用天数</div>
+          <div class="f-row"><input type="number" id="aTasks" value="200" min="1" oninput="calcAgent()">
+          <input type="number" id="aDays" value="30" min="1" max="31" oninput="calcAgent()"></div></div>
+      </div>
+      <div class="result">
+        <div class="r-label">单个 Agent 任务成本</div>
+        <div class="r-big" id="aCost">—</div>
+        <div class="r-rows">
+          <div class="r-row"><span>单任务 Token（输入随步数累积）</span><b id="aTok">—</b></div>
+          <div class="r-row"><span>其中输入 / 输出</span><b id="aSplit">—</b></div>
+          <div class="r-row"><span>调用链放大倍数</span><b id="aAmp">—</b></div>
+          <div class="r-row"><span>日成本</span><b id="aDay">—</b></div>
+          <div class="r-row"><span>月成本</span><b id="aMonth">—</b></div>
+        </div>
+        <div class="formula"><b>口径：</b>第 i 步输入 = 首步上下文 + 之前所有步骤的输出（上下文累积）；放大倍数 = 单任务成本 ÷ 单次调用成本。<br><b>假设：</b>每步调用同一模型，工具返回内容计入上下文。</div>
+        <button class="btn mini" onclick="saveReport('Agent 成本', aSummary())">保存报告</button>
+        <div class="kn-links"><div class="kn-t">了解相关概念</div>
+          <div class="kn-item" onclick="openArticle('agent-cost')">📖 为什么 Agent 比聊天贵 10 倍</div>
+        </div>
+        <div class="disclaimer">测算结果由用户输入参数和公开参数计算生成，仅供预算参考，不构成采购、投资、交易或部署建议。</div>
+      </div>
+    </section>
+
+    <!-- ============ 工具：GPU 需求 ============ -->
+    <section class="page" id="page-t-gpu">
+      <div class="card">
+        <div class="card-title">GPU 需求计算器</div>
+        <div class="field"><div class="f-label">模型参数量</div>
+          <div class="seg" id="gSizeSeg">
+            <div data-v="7">7B</div><div data-v="14">14B</div><div class="on" data-v="32">32B</div>
+            <div data-v="72">72B</div><div data-v="671">671B</div>
+          </div></div>
+        <div class="field"><div class="f-label">精度类型</div>
+          <div class="seg" id="gQuantSeg">
+            <div data-v="2">FP16</div><div class="on" data-v="1">INT8</div><div data-v="0.5">INT4</div>
+          </div></div>
+        <div class="field"><div class="f-label">显卡型号 <span class="hint">显存可改</span></div>
+          <select id="gCard" onchange="gFill()"></select></div>
+        <div class="field"><div class="f-label">单卡显存 <span class="hint">GB</span> · 峰值并发数</div>
+          <div class="f-row"><input type="number" id="gMem" value="80" min="1" oninput="calcGpu()">
+          <input type="number" id="gConc" value="30" min="1" oninput="calcGpu()"></div></div>
+        <div class="field"><div class="f-label">安全冗余比例 <span class="hint">%</span></div>
+          <div class="f-row"><input type="number" id="gRed" value="30" min="0" max="100" oninput="calcGpu()"></div></div>
+      </div>
+      <div class="result">
+        <div class="r-label">估算 GPU 张数区间</div>
+        <div class="r-big" id="gCount">—</div>
+        <div class="r-rows">
+          <div class="r-row"><span>理论显存需求（权重 + KV）</span><b id="gTotal">—</b></div>
+          <div class="r-row"><span>其中模型权重</span><b id="gW">—</b></div>
+          <div class="r-row"><span>其中 KV Cache + 运行开销</span><b id="gKV">—</b></div>
+          <div class="r-row"><span>最低张数（不含冗余）</span><b id="gMin">—</b></div>
+          <div class="r-row"><span>冗余后张数</span><b id="gMax">—</b></div>
+          <div class="r-row"><span>整机换算（8 卡 / 台）</span><b id="gServer">—</b></div>
+        </div>
+        <div class="formula"><b>公式：</b>权重显存 = 参数量 × 每参数字节 × 1.1；KV Cache 按 4K 上下文 × 并发数估算；张数 = ⌈总显存 ÷（单卡显存 × 90%）⌉。<br><b>说明：</b>结果为估算区间，实际受推理框架、并行方式和上下文长度影响。</div>
+        <button class="btn mini" onclick="saveReport('GPU 需求', gSummary())">保存报告</button>
+        <div class="kn-links"><div class="kn-t">了解相关概念</div>
+          <div class="kn-item" onclick="openArticle('gpu-h100-b300')">📖 显存、参数量和并发是什么关系</div>
+        </div>
+        <div class="disclaimer">测算结果由用户输入参数和公开参数计算生成，仅供预算参考，不构成采购、投资、交易或部署建议。</div>
+      </div>
+    </section>
+
+    <!-- ============ 工具：电力 ============ -->
+    <section class="page" id="page-t-power">
+      <div class="card">
+        <div class="card-title">电力成本计算器</div>
+        <div class="field"><div class="f-label">显卡型号 <span class="hint">功耗可改</span></div>
+          <select id="pCard" onchange="pFill()"></select></div>
+        <div class="field"><div class="f-label">GPU 数量 / 单卡功耗 <span class="hint">W</span></div>
+          <div class="f-row"><input type="number" id="pCount" value="8" min="1" oninput="calcPower()">
+          <input type="number" id="pTdp" value="700" min="1" oninput="calcPower()"></div></div>
+        <div class="field"><div class="f-label">服务器其他功耗合计 <span class="hint">W（CPU/内存/风扇）</span></div>
+          <div class="f-row"><input type="number" id="pOther" value="2000" min="0" oninput="calcPower()"></div></div>
+        <div class="field"><div class="f-label">每日运行小时 / 月运行天数</div>
+          <div class="f-row"><input type="number" id="pHours" value="24" min="1" max="24" oninput="calcPower()">
+          <input type="number" id="pDays" value="30" min="1" max="31" oninput="calcPower()"></div></div>
+        <div class="field"><div class="f-label">电价 <span class="hint">元 / 度</span> · 机房 PUE</div>
+          <div class="f-row"><input type="number" id="pPrice" value="0.8" step="0.1" min="0" oninput="calcPower()">
+          <input type="number" id="pPue" value="1.3" step="0.1" min="1" oninput="calcPower()"></div></div>
+      </div>
+      <div class="result">
+        <div class="r-label">预计每月电费</div>
+        <div class="r-big" id="pCost">—</div>
+        <div class="r-rows">
+          <div class="r-row"><span>IT 设备总功率</span><b id="pItKw">—</b></div>
+          <div class="r-row"><span>含 PUE 总功率</span><b id="pTotKw">—</b></div>
+          <div class="r-row"><span>日耗电量</span><b id="pDayKwh">—</b></div>
+          <div class="r-row"><span>月耗电量</span><b id="pKwh">—</b></div>
+          <div class="r-row"><span>年电费</span><b id="pYear">—</b></div>
+        </div>
+        <div class="formula"><b>公式：</b>月电费 =（GPU 功耗 + 其他功耗）÷ 1000 × PUE × 日运行小时 × 月运行天数 × 电价<br><b>PUE 说明：</b>PUE = 数据中心总能耗 ÷ IT 设备能耗，制冷与配电损耗都摊在这个系数里。</div>
+        <button class="btn mini" onclick="saveReport('电力成本', pSummary())">保存报告</button>
+        <div class="kn-links"><div class="kn-t">了解相关概念</div>
+          <div class="kn-item" onclick="openArticle('pue-explain')">📖 PUE 是什么</div>
+          <div class="kn-item" onclick="openArticle('aidc-liquid')">📖 数据中心电费如何影响算力成本</div>
+        </div>
+        <div class="disclaimer">测算结果由用户输入参数和公开参数计算生成，仅供预算参考，不构成采购、投资、交易或部署建议。</div>
+      </div>
+    </section>
+
+    <!-- ============ 工具：API vs 自建对比 ============ -->
+    <section class="page" id="page-t-compare">
+      <div class="card">
+        <div class="card-title">API 与自建成本对比器</div>
+        <div class="field"><div class="f-label">API 月成本 <span class="hint">元，可先用 Token 工具算出</span></div>
+          <div class="f-row"><input type="number" id="cApi" value="30000" min="0" oninput="calcCompare()"></div></div>
+        <div class="field"><div class="f-label">GPU 数量 / 单卡价格 <span class="hint">元</span></div>
+          <div class="f-row"><input type="number" id="cCnt" value="8" min="1" oninput="calcCompare()">
+          <input type="number" id="cPrice" value="220000" min="0" oninput="calcCompare()"></div></div>
+        <div class="field"><div class="f-label">设备折旧周期 <span class="hint">月</span></div>
+          <div class="f-row"><input type="number" id="cDep" value="36" min="1" oninput="calcCompare()"></div></div>
+        <div class="field"><div class="f-label">每月电费 / 机柜托管 <span class="hint">元/月</span></div>
+          <div class="f-row"><input type="number" id="cElec" value="7000" min="0" oninput="calcCompare()">
+          <input type="number" id="cHost" value="5000" min="0" oninput="calcCompare()"></div></div>
+        <div class="field"><div class="f-label">运维人力 / 网络成本 <span class="hint">元/月</span></div>
+          <div class="f-row"><input type="number" id="cOps" value="8000" min="0" oninput="calcCompare()">
+          <input type="number" id="cNet" value="2000" min="0" oninput="calcCompare()"></div></div>
+      </div>
+      <div class="result">
+        <div class="r-label">每月成本对比</div>
+        <div class="vs-wrap">
+          <div class="vs-item"><div class="vs-head"><span>☁️ API 方案</span><span id="cApiV">—</span></div>
+            <div class="vs-track"><div class="vs-fill" id="cApiBar" style="width:50%"></div></div></div>
+          <div class="vs-item"><div class="vs-head"><span>🖥️ 自建方案</span><span id="cSelfV">—</span></div>
+            <div class="vs-track"><div class="vs-fill silver" id="cSelfBar" style="width:50%"></div></div></div>
+        </div>
+        <div class="r-rows">
+          <div class="r-row"><span>硬件月摊销</span><b id="cDepV">—</b></div>
+          <div class="r-row"><span>电费 + 托管 + 运维 + 网络</span><b id="cOpxV">—</b></div>
+          <div class="r-row"><span>自建月成本合计</span><b id="cSelfM">—</b></div>
+          <div class="r-row"><span>自建年成本</span><b id="cSelfY">—</b></div>
+          <div class="r-row"><span>两方案月差额（绝对值）</span><b id="cDiff">—</b></div>
+        </div>
+        <div class="formula"><b>公式：</b>自建月成本 = 硬件总价 ÷ 折旧月数 + 电费 + 托管 + 运维 + 网络<br><b>敏感参数：</b>折旧周期、电价和利用率对结果影响最大，建议多算几组。</div>
+        <button class="btn mini" onclick="saveReport('API vs 自建对比', cSummary())">保存报告</button>
+        <div class="kn-links"><div class="kn-t">了解相关概念</div>
+          <div class="kn-item" onclick="openArticle('api-vs-self')">📖 API 还是自建？算清三笔账</div>
+        </div>
+        <div class="disclaimer">本工具只展示对比数字，不构成方案选择建议。测算结果仅供预算参考。</div>
+      </div>
+    </section>
+
+    <!-- ============ 工具：参数库 ============ -->
+    <section class="page" id="page-t-params">
+      <div class="card">
+        <div class="card-title">模型 API 刊例价 <span style="font-weight:400;font-size:11px;color:var(--ink-3)">（元 / 百万 Token）</span></div>
+        <div class="fig" style="margin:0;box-shadow:none;border:none">
+          <table id="paramModels"></table>
+        </div>
+        <div class="r-note">更新时间：2026-06-12 · 价格为公开刊例价，非实时报价，请以官方为准。</div>
+      </div>
+      <div class="card">
+        <div class="card-title">GPU 参考规格</div>
+        <div class="fig" style="margin:0;box-shadow:none;border:none">
+          <table id="paramCards"></table>
+        </div>
+        <div class="r-note">更新时间：2026-06-12 · 单价为公开渠道参考值，非报价；本产品不提供采购渠道。</div>
+      </div>
+      <div class="card">
+        <div class="card-title">默认参数</div>
+        <div class="r-rows" style="border:none;margin-top:0;padding-top:0">
+          <div class="r-row"><span>默认电价</span><b>0.8 元 / 度</b></div>
+          <div class="r-row"><span>默认 PUE</span><b>1.3</b></div>
+          <div class="r-row"><span>默认折旧周期</span><b>36 个月</b></div>
+          <div class="r-row"><span>默认月使用天数</span><b>30 天</b></div>
+        </div>
+        <div class="r-note">可在「我的 → 参数偏好」修改默认值。更新时间：2026-06-12。</div>
+      </div>
+    </section>
+
+    <!-- ============ 资讯 ============ -->
+    <section class="page" id="page-news">
+      <div class="search-box"><span class="s-ico">🔍</span>
+        <input type="text" id="newsSearch" placeholder="搜索历史推文 / 知识 / 标签" oninput="renderNews()">
+      </div>
+      <div class="chip-row" id="newsChips"></div>
+      <div id="newsList"></div>
+      <div class="footer-quote">内容来自自有公众号历史推文与原创整理，仅用于行业知识分享，<br>不构成投资、采购或交易建议。</div>
+    </section>
+
+    <!-- ============ 文章详情 ============ -->
+    <section class="page" id="page-article">
+      <div id="artBox"></div>
+    </section>
+
+    <!-- ============ 专题 ============ -->
+    <section class="page" id="page-topic">
+      <div id="topicBox"></div>
+    </section>
+
+    <!-- ============ 我的 ============ -->
+    <section class="page" id="page-me">
+      <div class="me-head">
+        <div class="i3d" data-i="user"></div>
+        <div><div class="m-name">算力栈用户</div>
+        <div class="m-sub">仅用于保存报告与收藏 · 不收集敏感信息</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">我的测算报告</div>
+        <div id="meReports"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">我的收藏</div>
+        <div id="meFavs"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">参数偏好</div>
+        <div class="field"><div class="f-label">默认电价 <span class="hint">元/度</span> · 默认 PUE</div>
+          <div class="f-row"><input type="number" id="prefElec" value="0.8" step="0.1" min="0">
+          <input type="number" id="prefPue" value="1.3" step="0.1" min="1"></div></div>
+        <div class="field"><div class="f-label">默认月使用天数</div>
+          <div class="f-row"><input type="number" id="prefDays" value="30" min="1" max="31"></div></div>
+        <button class="btn mini" onclick="savePrefs()">保存偏好</button>
+        <div class="r-note">偏好仅保存在本机，作为各工具的默认值。</div>
+      </div>
+
+      <div class="footer-quote">算力栈 · AI 成本测算与算力知识工具<br>只做算清楚和讲明白，不做买什么、找谁买、多少钱买。</div>
+    </section>
+
+  </div>
+
+  <!-- TabBar -->
+  <div class="tabbar">
+    <div class="tab on" data-p="home" onclick="goTab('home')"><div class="ico i3d" data-i="home"></div>首页</div>
+    <div class="tab" data-p="quick" onclick="goTab('quick')"><div class="ico i3d" data-i="timer"></div>快测</div>
+    <div class="tab" data-p="tools" onclick="goTab('tools')"><div class="ico i3d" data-i="toolbox"></div>工具</div>
+    <div class="tab" data-p="news" onclick="goTab('news')"><div class="ico i3d" data-i="news"></div>资讯</div>
+    <div class="tab" data-p="me" onclick="goTab('me')"><div class="ico i3d" data-i="user"></div>我的</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= 3D 图标库 ================= */
+let _gid=0;
+const ICONS = {
+  logo(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8f2ff"/><stop offset="1" stop-color="#9fc3f2"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5aa2ff"/><stop offset="1" stop-color="#1b5ecc"/></linearGradient>
+    <linearGradient id="c${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e7bf0"/><stop offset="1" stop-color="#0d3f95"/></linearGradient></defs>
+    <polygon points="32,4 58,17 32,30 6,17" fill="url(#a${g})"/>
+    <polygon points="6,17 32,30 32,42 6,29" fill="url(#b${g})"/>
+    <polygon points="58,17 32,30 32,42 58,29" fill="url(#c${g})"/>
+    <polygon points="6,33 32,46 32,58 6,45" fill="url(#b${g})" opacity=".85"/>
+    <polygon points="58,33 32,46 32,58 58,45" fill="url(#c${g})" opacity=".85"/></svg>`;},
+  token(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd98a"/><stop offset="1" stop-color="#e8a23c"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c97f1e"/><stop offset="1" stop-color="#a3650f"/></linearGradient></defs>
+    <ellipse cx="32" cy="46" rx="22" ry="9" fill="url(#b${g})"/><rect x="10" y="38" width="44" height="8" fill="url(#b${g})"/>
+    <ellipse cx="32" cy="38" rx="22" ry="9" fill="url(#a${g})"/>
+    <ellipse cx="32" cy="30" rx="22" ry="9" fill="url(#b${g})"/><rect x="10" y="22" width="44" height="8" fill="url(#b${g})"/>
+    <ellipse cx="32" cy="22" rx="22" ry="9" fill="url(#a${g})"/>
+    <text x="32" y="26" text-anchor="middle" font-size="9" font-weight="900" fill="#8a5200">¥</text></svg>`;},
+  agent(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dfeaf6"/><stop offset="1" stop-color="#9fb4cc"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a93f5"/><stop offset="1" stop-color="#1b5ecc"/></linearGradient></defs>
+    <rect x="14" y="18" width="36" height="30" rx="9" fill="url(#a${g})"/>
+    <rect x="14" y="18" width="36" height="13" rx="9" fill="#fff" opacity=".4"/>
+    <line x1="32" y1="10" x2="32" y2="18" stroke="#8aa3c0" stroke-width="3"/><circle cx="32" cy="9" r="3.6" fill="url(#b${g})"/>
+    <circle cx="25" cy="33" r="4.4" fill="url(#b${g})"/><circle cx="39" cy="33" r="4.4" fill="url(#b${g})"/>
+    <circle cx="23.6" cy="31.6" r="1.4" fill="#dff0ff"/><circle cx="37.6" cy="31.6" r="1.4" fill="#dff0ff"/>
+    <rect x="25" y="41" width="14" height="3.4" rx="1.7" fill="#7d92ab"/>
+    <rect x="8" y="28" width="4" height="11" rx="2" fill="url(#b${g})"/><rect x="52" y="28" width="4" height="11" rx="2" fill="url(#b${g})"/></svg>`;},
+  gpu(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b4a5e"/><stop offset="1" stop-color="#1d2735"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#69e0a8"/><stop offset="1" stop-color="#23a866"/></linearGradient></defs>
+    <rect x="8" y="14" width="48" height="34" rx="6" fill="url(#a${g})"/>
+    <rect x="8" y="14" width="48" height="12" rx="6" fill="#fff" opacity=".08"/>
+    <rect x="16" y="22" width="20" height="18" rx="3" fill="url(#b${g})"/>
+    <rect x="16" y="22" width="20" height="8" rx="3" fill="#fff" opacity=".25"/>
+    <rect x="41" y="22" width="9" height="4" rx="1.5" fill="#5d7astroke" fill-opacity="0" stroke="#7d93ad" stroke-width="1.4"/>
+    <rect x="41" y="29" width="9" height="4" rx="1.5" stroke="#7d93ad" stroke-width="1.4" fill="none"/>
+    <rect x="41" y="36" width="9" height="4" rx="1.5" stroke="#7d93ad" stroke-width="1.4" fill="none"/>
+    <g fill="#8fa6bf"><rect x="12" y="48" width="3.4" height="6" rx="1"/><rect x="19" y="48" width="3.4" height="6" rx="1"/><rect x="26" y="48" width="3.4" height="6" rx="1"/><rect x="33" y="48" width="3.4" height="6" rx="1"/><rect x="40" y="48" width="3.4" height="6" rx="1"/><rect x="47" y="48" width="3.4" height="6" rx="1"/></g></svg>`;},
+  bolt(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#f5a623"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8841a"/><stop offset="1" stop-color="#b06410"/></linearGradient></defs>
+    <polygon points="36,4 14,36 28,36 24,60 50,26 34,26" fill="url(#a${g})"/>
+    <polygon points="36,4 30,26 34,26 28,36 28,36 24,60 28,38 22,38" fill="url(#b${g})" opacity=".5"/>
+    <ellipse cx="32" cy="59" rx="15" ry="3.2" fill="#1b5ecc" opacity=".18"/></svg>`;},
+  scale(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dfeaf6"/><stop offset="1" stop-color="#9fb4cc"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a93f5"/><stop offset="1" stop-color="#1b5ecc"/></linearGradient></defs>
+    <rect x="29.4" y="10" width="5.2" height="38" rx="2.6" fill="url(#a${g})"/>
+    <rect x="14" y="12" width="36" height="5" rx="2.5" fill="url(#a${g})"/>
+    <path d="M 16 17 L 9 32 L 23 32 Z" fill="url(#b${g})"/><ellipse cx="16" cy="33" rx="8" ry="2.6" fill="#1b5ecc" opacity=".55"/>
+    <path d="M 48 17 L 41 32 L 55 32 Z" fill="url(#b${g})"/><ellipse cx="48" cy="33" rx="8" ry="2.6" fill="#1b5ecc" opacity=".55"/>
+    <rect x="20" y="48" width="24" height="6" rx="3" fill="url(#b${g})"/></svg>`;},
+  db(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fc4ff"/><stop offset="1" stop-color="#2e7bf0"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e7bf0"/><stop offset="1" stop-color="#0d3f95"/></linearGradient></defs>
+    <ellipse cx="32" cy="14" rx="20" ry="8" fill="url(#a${g})"/>
+    <path d="M 12 14 V 30 C 12 34.4 21 38 32 38 S 52 34.4 52 30 V 14" fill="url(#b${g})"/>
+    <path d="M 12 30 V 46 C 12 50.4 21 54 32 54 S 52 50.4 52 46 V 30" fill="url(#b${g})" opacity=".8"/>
+    <ellipse cx="32" cy="30" rx="20" ry="8" fill="url(#a${g})" opacity=".4"/></svg>`;},
+  news(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfdcec"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a93f5"/><stop offset="1" stop-color="#1b5ecc"/></linearGradient></defs>
+    <path d="M 10 12 H 40 a 4 4 0 0 1 4 4 V 52 H 14 a 4 4 0 0 1 -4 -4 Z" fill="url(#a${g})" stroke="#b8cce4" stroke-width="1.5"/>
+    <path d="M 44 22 H 50 a 4 4 0 0 1 4 4 V 47 a 5 5 0 0 1 -5 5 H 44 Z" fill="url(#b${g})"/>
+    <rect x="15" y="18" width="24" height="9" rx="2" fill="url(#b${g})" opacity=".85"/>
+    <g fill="#9eb3cc"><rect x="15" y="32" width="24" height="2.6" rx="1.3"/><rect x="15" y="38" width="24" height="2.6" rx="1.3"/><rect x="15" y="44" width="16" height="2.6" rx="1.3"/></g></svg>`;},
+  layers(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9ed0ff"/><stop offset="1" stop-color="#4a93f5"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a93f5"/><stop offset="1" stop-color="#0d3f95"/></linearGradient></defs>
+    <polygon points="32,6 56,18 32,30 8,18" fill="url(#a${g})"/>
+    <polygon points="32,22 56,34 32,46 8,34" fill="url(#b${g})" opacity=".85"/>
+    <polygon points="32,38 56,50 32,62 8,50" fill="url(#b${g})" opacity=".55"/></svg>`;},
+  clock(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfdcec"/></linearGradient></defs>
+    <circle cx="32" cy="34" r="22" fill="url(#a${g})" stroke="#4a93f5" stroke-width="3"/>
+    <line x1="32" y1="34" x2="32" y2="20" stroke="#1b5ecc" stroke-width="3.4" stroke-linecap="round"/>
+    <line x1="32" y1="34" x2="42" y2="40" stroke="#1b5ecc" stroke-width="3.4" stroke-linecap="round"/>
+    <rect x="26" y="4" width="12" height="5" rx="2.5" fill="#4a93f5"/></svg>`;},
+  timer(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfdcec"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a93f5"/><stop offset="1" stop-color="#1b5ecc"/></linearGradient></defs>
+    <circle cx="32" cy="36" r="21" fill="url(#a${g})" stroke="#4a93f5" stroke-width="3"/>
+    <path d="M 32 36 L 32 22 A 14 14 0 0 1 44 30 Z" fill="url(#b${g})"/>
+    <rect x="27" y="5" width="10" height="5" rx="2.5" fill="#4a93f5"/><line x1="47" y1="13" x2="51" y2="17" stroke="#4a93f5" stroke-width="3.4" stroke-linecap="round"/></svg>`;},
+  home(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fb6ff"/><stop offset="1" stop-color="#1b5ecc"/></linearGradient></defs>
+    <path d="M 32 8 L 58 30 H 50 V 54 H 38 V 40 H 26 V 54 H 14 V 30 H 6 Z" fill="url(#a${g})"/></svg>`;},
+  toolbox(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fb6ff"/><stop offset="1" stop-color="#1b5ecc"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3568b8"/><stop offset="1" stop-color="#0d3f95"/></linearGradient></defs>
+    <rect x="8" y="20" width="48" height="32" rx="6" fill="url(#a${g})"/>
+    <rect x="8" y="20" width="48" height="13" rx="6" fill="#fff" opacity=".22"/>
+    <path d="M 24 20 V 15 a 4 4 0 0 1 4 -4 h 8 a 4 4 0 0 1 4 4 v 5" fill="none" stroke="url(#b${g})" stroke-width="4.6"/>
+    <rect x="27" y="32" width="10" height="8" rx="2.4" fill="#0d3f95"/></svg>`;},
+  user(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfdcec"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a93f5"/><stop offset="1" stop-color="#1b5ecc"/></linearGradient></defs>
+    <circle cx="32" cy="32" r="26" fill="url(#a${g})"/>
+    <circle cx="32" cy="25" r="9.5" fill="url(#b${g})"/>
+    <path d="M 14 50 a 18 13 0 0 1 36 0 Z" fill="url(#b${g})"/></svg>`;},
+  doc(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfdcec"/></linearGradient></defs>
+    <path d="M 14 8 H 40 L 50 18 V 56 H 14 Z" fill="url(#a${g})" stroke="#9eb3cc" stroke-width="1.6"/>
+    <path d="M 40 8 L 40 18 H 50 Z" fill="#9eb3cc"/>
+    <g fill="#4a93f5"><rect x="20" y="26" width="24" height="3" rx="1.5"/><rect x="20" y="33" width="24" height="3" rx="1.5"/><rect x="20" y="40" width="15" height="3" rx="1.5"/></g></svg>`;},
+  star(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd98a"/><stop offset="1" stop-color="#e8a23c"/></linearGradient></defs>
+    <path d="M 32 6 L 40 24 L 59 26 L 45 39 L 49 58 L 32 48 L 15 58 L 19 39 L 5 26 L 24 24 Z" fill="url(#a${g})"/></svg>`;},
+  dc(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dfeaf6"/><stop offset="1" stop-color="#9fb4cc"/></linearGradient>
+    <linearGradient id="b${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a93f5"/><stop offset="1" stop-color="#1b5ecc"/></linearGradient></defs>
+    <rect x="12" y="8" width="40" height="48" rx="5" fill="url(#a${g})"/>
+    <rect x="18" y="14" width="28" height="9" rx="2.4" fill="url(#b${g})"/><circle cx="41" cy="18.5" r="2" fill="#aef3c2"/>
+    <rect x="18" y="27" width="28" height="9" rx="2.4" fill="url(#b${g})" opacity=".85"/><circle cx="41" cy="31.5" r="2" fill="#aef3c2"/>
+    <rect x="18" y="40" width="28" height="9" rx="2.4" fill="url(#b${g})" opacity=".7"/><circle cx="41" cy="44.5" r="2" fill="#ffd98a"/></svg>`;},
+  drop(){const g=++_gid;return `<svg viewBox="0 0 64 64"><defs>
+    <linearGradient id="a${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd0ff"/><stop offset="1" stop-color="#1b6ce0"/></linearGradient></defs>
+    <path d="M 32 6 C 32 6 12 30 12 42 a 20 20 0 0 0 40 0 C 52 30 32 6 32 6 Z" fill="url(#a${g})"/>
+    <path d="M 24 40 a 8 9 0 0 0 7 10" fill="none" stroke="#dff4ff" stroke-width="3.4" stroke-linecap="round"/></svg>`;},
+};
+function hydrateIcons(root){
+  (root||document).querySelectorAll('.i3d[data-i]').forEach(el=>{
+    if(!el.dataset.done){ const f=ICONS[el.dataset.i]; if(f){ el.innerHTML=f(); el.dataset.done=1; } }
+  });
+}
+
+/* ================= 数据 ================= */
+const PARAM_DATE='2026-06-12';
+const MODELS = [
+  {id:'ds-v3',  name:'DeepSeek-V3',        in:2,    out:8},
+  {id:'ds-r1',  name:'DeepSeek-R1（推理）', in:4,    out:16},
+  {id:'qwen-p', name:'Qwen-Plus',           in:0.8,  out:2},
+  {id:'qwen-m', name:'Qwen-Max',            in:2.4,  out:9.6},
+  {id:'doubao', name:'豆包 Pro',            in:0.8,  out:2},
+  {id:'gpt4o',  name:'GPT-4o（≈¥）',        in:18,   out:72},
+  {id:'sonnet', name:'Claude Sonnet（≈¥）', in:22,   out:108},
+];
+const CARDS = [
+  {id:'4090', name:'RTX 4090 · 24G',   mem:24,  tdp:450,  price:15000},
+  {id:'a100', name:'A100 · 80G',       mem:80,  tdp:400,  price:120000},
+  {id:'h100', name:'H100 · 80G',       mem:80,  tdp:700,  price:220000},
+  {id:'h200', name:'H200 · 141G',      mem:141, tdp:700,  price:280000},
+  {id:'b200', name:'B200 · 192G',      mem:192, tdp:1000, price:350000},
+  {id:'b300', name:'B300 · 288G',      mem:288, tdp:1400, price:450000},
+  {id:'h800', name:'H800 · 80G',       mem:80,  tdp:700,  price:200000},
+  {id:'h20',  name:'H20 · 96G',        mem:96,  tdp:400,  price:90000},
+  {id:'910b', name:'昇腾 910B · 64G',  mem:64,  tdp:310,  price:80000},
+];
+
+/* ===== 资讯内容 ===== */
+const COVERS={
+  blue:'linear-gradient(135deg,#1f74ec,#0d3f95)', cyan:'linear-gradient(135deg,#22b8e6,#1b5ecc)',
+  deep:'linear-gradient(135deg,#33415c,#101a2e)', green:'linear-gradient(135deg,#2fae72,#136a45)',
+  gold:'linear-gradient(135deg,#f0b34c,#c97f1e)', violet:'linear-gradient(135deg,#7a6cf0,#3a2fa8)',
+};
+const ARTICLES=[
+ {id:'token-101', tag:'算力科普', cover:'blue', icon:'token', date:'2025-11-18', mins:6,
+  title:'一文看懂 Token：AI 账单的最小计量单位',
+  sum:'API 按 Token 计费，但输入和输出价格差好几倍。看懂 Token，才能看懂账单。',
+  body:`
+   <p>所有大模型 API 的账单，最终都落在一个单位上：<b>Token</b>。一个 Token 大约是 0.5 ~ 0.7 个汉字，或 0.75 个英文单词。你发给模型的内容按「输入 Token」计费，模型回复的内容按「输出 Token」计费。</p>
+   <h3>输入和输出，价格差好几倍</h3>
+   <p>几乎所有厂商的定价里，输出 Token 都比输入贵 3 ~ 5 倍。因为生成文字需要逐 Token 推理，算力消耗远高于读取。</p>
+   <div class="fig"><table><tr><th>模型</th><th>输入（¥/百万）</th><th>输出（¥/百万）</th><th>倍差</th></tr>
+   <tr><td>DeepSeek-V3</td><td>2</td><td><b>8</b></td><td>4×</td></tr>
+   <tr><td>Qwen-Plus</td><td>0.8</td><td><b>2</b></td><td>2.5×</td></tr>
+   <tr><td>GPT-4o</td><td>≈18</td><td><b>≈72</b></td><td>4×</td></tr></table>
+   <div class="fig-cap">主流模型输入 / 输出刊例价对比（2026-06 整理，以官方为准）</div></div>
+   <h3>账单为什么会失控</h3>
+   <p>三个最常见的原因：① 系统提示词太长，每次请求都重复计费；② 对话历史全部回传，输入 Token 随轮数线性增长；③ 输出没有长度限制。</p>
+   <div class="quote">省钱第一刀永远砍在输入上：压缩系统提示词、截断历史、给输出加上限。</div>
+   <p>想知道自己的用量值多少钱？用「Token 成本计算器」填上日请求量和平均长度，30 秒出结果。</p>`,
+  tools:[['t-token','Token 成本计算器']], rel:['agent-cost','api-vs-self']},
+
+ {id:'agent-cost', tag:'AI 成本', cover:'violet', icon:'agent', date:'2025-12-09', mins:7,
+  title:'为什么 Agent 比聊天贵 10 倍：上下文滚雪球效应',
+  sum:'每多走一步，Agent 都会把之前的对话重新喂一遍。输入 Token 是平方级长大的。',
+  body:`
+   <p>同一个模型，单轮问答可能只要几分钱，跑一个 Agent 任务却要几块钱。差距不在模型，在<b>调用结构</b>。</p>
+   <h3>滚雪球是怎么滚起来的</h3>
+   <p>Agent 每走一步（规划、调工具、读结果、反思），都要把<b>之前所有内容</b>作为上下文重新发给模型。第 1 步输入 3000 Token，第 10 步可能就是 9000 Token——输入总量随步数接近平方增长。</p>
+   <div class="fig"><div class="fig-vis" style="flex-direction:column;gap:6px;align-items:stretch">
+     <div class="statbar"><div class="sb-l">第 1 步</div><div class="sb-track"><div class="sb-fill" style="width:18%"></div></div><div class="sb-v">3.0k</div></div>
+     <div class="statbar"><div class="sb-l">第 4 步</div><div class="sb-track"><div class="sb-fill" style="width:38%"></div></div><div class="sb-v">4.8k</div></div>
+     <div class="statbar"><div class="sb-l">第 8 步</div><div class="sb-track"><div class="sb-fill" style="width:68%"></div></div><div class="sb-v">7.2k</div></div>
+     <div class="statbar"><div class="sb-l">第 12 步</div><div class="sb-track"><div class="sb-fill" style="width:96%"></div></div><div class="sb-v">9.6k</div></div>
+   </div><div class="fig-cap">单步输入 Token 随步数增长示意（首步上下文 3k、每步输出 600）</div></div>
+   <h3>成本结构的三个观察</h3>
+   <p>① 输入成本占比通常超过 70%，虽然输入单价更便宜；② 步数对成本的影响大于单步长度；③ 工具返回的长文本（网页、文件）是隐形大头。</p>
+   <div class="quote">看 Agent 成本不要看「每次调用多少钱」，要看「一个任务多少钱」。</div>
+   <p>用「Agent 成本计算器」输入步数和上下文长度，可以看到调用链放大倍数。</p>`,
+  tools:[['t-agent','Agent 成本计算器']], rel:['token-101','api-vs-self']},
+
+ {id:'gpu-h100-b300', tag:'GPU/芯片', cover:'deep', icon:'gpu', date:'2026-01-22', mins:8,
+  title:'从 H100 到 B300：一张表看懂英伟达数据中心 GPU',
+  sum:'显存、功耗、互连，三个数字决定一张卡的定位。H100、H200、B200、B300 差在哪？',
+  body:`
+   <p>看数据中心 GPU，先看三个数字：<b>显存容量</b>决定能装下多大的模型，<b>显存带宽</b>决定推理吞吐，<b>功耗</b>决定电费和散热方案。</p>
+   <h3>Hopper 到 Blackwell</h3>
+   <div class="fig"><table><tr><th>型号</th><th>显存</th><th>功耗</th><th>架构</th></tr>
+   <tr><td>H100</td><td>80 GB</td><td>700 W</td><td>Hopper</td></tr>
+   <tr><td>H200</td><td><b>141 GB</b></td><td>700 W</td><td>Hopper</td></tr>
+   <tr><td>B200</td><td><b>192 GB</b></td><td>1000 W</td><td>Blackwell</td></tr>
+   <tr><td>B300</td><td><b>288 GB</b></td><td>1400 W</td><td>Blackwell Ultra</td></tr></table>
+   <div class="fig-cap">参考规格（公开资料整理，2026-06）</div></div>
+   <p>H200 相对 H100 最大的变化不是算力而是<b>显存</b>：141GB 意味着 70B 级模型 FP16 权重可以单卡装下。Blackwell 一代则把单卡功耗推到了千瓦级——这直接改变了机房的供电和散热设计。</p>
+   <h3>显存、参数量和并发的关系</h3>
+   <p>粗略口径：模型权重显存 ≈ 参数量 × 每参数字节数 × 1.1。FP16 每参数 2 字节，INT8 是 1 字节，INT4 是 0.5 字节。在权重之外，每路并发还要占一块 KV Cache，上下文越长占得越多。</p>
+   <div class="quote">买多大显存，本质是在回答两个问题：模型多大、同时多少人用。</div>
+   <p>用「GPU 需求计算器」可以按参数量、精度和并发数估出张数区间和 8 卡整机台数。</p>`,
+  tools:[['t-gpu','GPU 需求计算器']], rel:['aidc-liquid','pue-explain']},
+
+ {id:'pue-explain', tag:'电力液冷', cover:'cyan', icon:'bolt', date:'2025-10-30', mins:5,
+  title:'PUE 是什么？数据中心电费的"隐形系数"',
+  sum:'IT 设备每用 1 度电，机房整体要用 1.2 ~ 1.5 度。差出来的就是 PUE。',
+  body:`
+   <p><b>PUE（Power Usage Effectiveness）</b>= 数据中心总能耗 ÷ IT 设备能耗。它衡量的是：为了让服务器跑起来，制冷、配电这些"配套"额外烧了多少电。</p>
+   <h3>PUE 每差 0.1，电费差多少</h3>
+   <p>一套 8 卡 H100 整机，IT 功耗约 7.6 kW。PUE 1.5 和 1.2 的机房，月电费能差出 12% 以上。规模越大差距越夸张——万卡集群一年的 PUE 差额够再买几十张卡。</p>
+   <div class="fig"><div class="fig-vis" style="flex-direction:column;gap:6px;align-items:stretch">
+     <div class="statbar"><div class="sb-l">风冷传统机房</div><div class="sb-track"><div class="sb-fill" style="width:96%"></div></div><div class="sb-v">1.5+</div></div>
+     <div class="statbar"><div class="sb-l">冷板式液冷</div><div class="sb-track"><div class="sb-fill" style="width:74%"></div></div><div class="sb-v">≈1.2</div></div>
+     <div class="statbar"><div class="sb-l">浸没式液冷</div><div class="sb-track"><div class="sb-fill" style="width:62%"></div></div><div class="sb-v">≈1.1</div></div>
+   </div><div class="fig-cap">不同散热方案的典型 PUE 区间（行业公开数据整理）</div></div>
+   <h3>为什么算力往低电价地区跑</h3>
+   <p>推理成本里电费是持续性大头：电价 × PUE 决定每 kWh 算力的"燃料成本"。这也是大型 AIDC 集中在水电、风电富集地区的原因。</p>
+   <div class="quote">看机房报价时，电价和 PUE 要一起看：0.6 元 × 1.5 和 0.75 元 × 1.2 几乎一样贵。</div>
+   <p>「电力成本计算器」里可以直接调 PUE 看月电费变化。</p>`,
+  tools:[['t-power','电力成本计算器']], rel:['aidc-liquid','gpu-h100-b300']},
+
+ {id:'aidc-liquid', tag:'数据中心', cover:'green', icon:'dc', date:'2026-03-14', mins:7,
+  title:'液冷正在成为 AIDC 标配：从风冷到浸没的三步演进',
+  sum:'单卡 1000W 之后，风扇吹不动了。液冷不是选择题，是时间表。',
+  body:`
+   <p>GPU 单卡功耗从 A100 的 400W 一路涨到 B300 的 1400W，单机柜功率密度从 8kW 冲到 100kW 以上。<b>风冷的物理极限大约在单柜 20kW</b>——之后必须换冷却介质。</p>
+   <h3>三步演进</h3>
+   <p><b>① 风冷</b>：传统精密空调 + 冷热通道，单柜 ≤20kW，PUE 1.4~1.6。<br><b>② 冷板式液冷</b>：冷却液流经贴在芯片上的冷板，带走 70~80% 热量，单柜可到 60kW，PUE ≈1.2，可改造存量机房。<br><b>③ 浸没式液冷</b>：服务器整机泡进绝缘冷却液，单柜 100kW+，PUE 可低至 1.05~1.1，但需要全新机房设计。</p>
+   <div class="fig"><table><tr><th>方案</th><th>单柜功率</th><th>典型 PUE</th><th>改造难度</th></tr>
+   <tr><td>风冷</td><td>≤20 kW</td><td>1.4~1.6</td><td>—</td></tr>
+   <tr><td>冷板液冷</td><td>~60 kW</td><td>≈1.2</td><td>中</td></tr>
+   <tr><td>浸没液冷</td><td>100 kW+</td><td>1.05~1.1</td><td>高</td></tr></table>
+   <div class="fig-cap">三种散热方案对比（行业公开资料整理）</div></div>
+   <h3>对成本的影响</h3>
+   <p>液冷增加初期投资，但用 PUE 把钱从电费里赚回来。功率密度越高、电价越贵、运行年限越长，液冷的总成本优势越明显。</p>
+   <div class="quote">看 AIDC 项目，问三个数：单柜功率、PUE、电价。三个数定生死。</div>`,
+  tools:[['t-power','电力成本计算器']], rel:['pue-explain','gpu-h100-b300']},
+
+ {id:'api-vs-self', tag:'AI 成本', cover:'gold', icon:'scale', date:'2026-05-08', mins:8,
+  title:'API 还是自建？算清三笔账再决定',
+  sum:'本文不替你做选择，只把两边的成本结构摆在同一张桌子上。',
+  body:`
+   <p>「调 API」和「自建推理」的成本结构完全不同：一个是<b>纯变动成本</b>，用多少付多少；一个是<b>固定成本 + 变动成本</b>，先投入后摊销。把两边放在同一张表里，需要算清三笔账。</p>
+   <h3>第一笔：API 账</h3>
+   <p>月成本 = 月 Token 用量 × 单价。优点是零门槛、弹性伸缩、不养团队；代价是单价里包含了厂商的毛利，用量大了之后总额可观。</p>
+   <h3>第二笔：自建账</h3>
+   <p>自建月成本 = 硬件折旧 + 电费 + 托管 + 运维 + 网络。其中容易被低估的三项：<b>运维人力</b>（值班、升级、故障）、<b>利用率</b>（白天峰值买的卡，夜里在闲置）、<b>折旧风险</b>（新卡发布会让旧卡贬值加速）。</p>
+   <div class="fig"><table><tr><th>成本项</th><th>API</th><th>自建</th></tr>
+   <tr><td>前期投入</td><td>0</td><td>硬件 + 机房</td></tr>
+   <tr><td>变动成本</td><td>按 Token</td><td>电费为主</td></tr>
+   <tr><td>固定成本</td><td>0</td><td>折旧/托管/运维</td></tr>
+   <tr><td>弹性</td><td>即时</td><td>采购周期</td></tr></table>
+   <div class="fig-cap">两种方案的成本结构对比（不含可用性与合规维度）</div></div>
+   <h3>第三笔：敏感性账</h3>
+   <p>对比结果对三个参数最敏感：<b>折旧周期</b>（按 3 年还是 5 年摊）、<b>利用率</b>（24 小时满载还是白天忙夜里闲）、<b>电价</b>。同一套硬件，参数取值不同，结论可能完全反转——所以建议至少算三组：乐观、中性、保守。</p>
+   <div class="quote">先把数字算出来，再做判断。数字之外的东西（数据安全、合规、团队能力）也都是变量，但至少账要先算对。</div>
+   <p>「API 与自建成本对比器」可以把两边的月成本放进同一张表。</p>`,
+  tools:[['t-compare','API 与自建成本对比器']], rel:['token-101','pue-explain']},
+];
+const TOPICS=[
+ {id:'tp1', name:'从 Token 到 GPU：AI 成本入门', cover:'blue', icon:'layers', arts:['token-101','agent-cost','api-vs-self']},
+ {id:'tp2', name:'算力基础设施必读', cover:'deep', icon:'dc', arts:['gpu-h100-b300','aidc-liquid']},
+ {id:'tp3', name:'电力与绿色算力', cover:'cyan', icon:'drop', arts:['pue-explain','aidc-liquid']},
+];
+const TAGS=['全部','算力科普','GPU/芯片','数据中心','电力液冷','AI 成本'];
+
+/* ================= 工具函数 ================= */
+const $ = id => document.getElementById(id);
+const fmtY = v => v>=10000 ? '¥'+(v/10000).toFixed(v>=100000?0:1)+' 万' : '¥'+Math.round(v).toLocaleString();
+const fmtY2 = v => v>=1 ? '¥'+v.toFixed(2) : '¥'+v.toFixed(3);
+const fmtTok = v => v>=1e8 ? (v/1e8).toFixed(1)+' 亿' : v>=1e4 ? (v/1e4).toFixed(1)+' 万' : Math.round(v).toLocaleString();
+const num = id => Math.max(0, parseFloat($(id).value)||0);
+function fillModels(sel){ sel.innerHTML = MODELS.map(m=>`<option value="${m.id}">${m.name} · ¥${m.in}/${m.out} 每百万</option>`).join(''); }
+function fillCards(sel){ sel.innerHTML = CARDS.map(c=>`<option value="${c.id}">${c.name}</option>`).join(''); }
+const getModel = sel => MODELS.find(m=>m.id===sel.value);
+const getCard  = sel => CARDS.find(c=>c.id===sel.value);
+function bindSeg(segId, cb){
+  const seg=$(segId);
+  seg.querySelectorAll('div').forEach(d=>d.onclick=()=>{
+    seg.querySelectorAll('div').forEach(x=>x.classList.remove('on'));
+    d.classList.add('on'); cb&&cb(d.dataset.v);
+  });
+}
+const segVal = segId => $(segId).querySelector('.on').dataset.v;
+let toastTimer;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* ================= 导航 ================= */
+const TITLES = {home:'算力栈', quick:'1 分钟快测', tools:'工具箱', news:'资讯', me:'我的',
+  't-token':'Token 成本计算器','t-agent':'Agent 成本计算器','t-gpu':'GPU 需求计算器',
+  't-power':'电力成本计算器','t-compare':'API vs 自建','t-params':'参数库',
+  article:'文章', topic:'专题'};
+const TABS=['home','quick','tools','news','me'];
+let navStack=['home'];
+function show(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  $('page-'+p).classList.add('on');
+  $('navTitle').textContent = TITLES[p]||'算力栈';
+  $('navBack').style.visibility = navStack.length>1?'visible':'hidden';
+  document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.toggle('on', t.dataset.p===p || (!TABS.includes(p)&&t.dataset.p===tabOf(p))));
+  $('content').scrollTop = 0;
+  if(p==='me') renderMe();
+  hydrateIcons();
+}
+function tabOf(p){ if(p.startsWith('t-'))return'tools'; if(p==='article'||p==='topic')return'news'; return'home'; }
+function go(p){ navStack.push(p); show(p); }
+function goTab(p){ navStack=[p]; show(p); }
+function goBack(){ if(navStack.length>1){ navStack.pop(); show(navStack[navStack.length-1]); } }
+
+/* ================= 本地存储 ================= */
+const store={
+  get(k,d){ try{ return JSON.parse(localStorage.getItem(k))??d; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} },
+};
+function saveReport(tool, rows){
+  const reports=store.get('slz_reports',[]);
+  reports.unshift({id:Date.now(), tool, time:new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}), rows});
+  store.set('slz_reports',reports.slice(0,30));
+  toast('已保存到「我的 → 测算报告」');
+}
+function delReport(id){ store.set('slz_reports',store.get('slz_reports',[]).filter(r=>r.id!==id)); renderMe(); }
+function toggleFav(aid){
+  let favs=store.get('slz_favs',[]);
+  if(favs.includes(aid)){ favs=favs.filter(x=>x!==aid); toast('已取消收藏'); }
+  else{ favs.push(aid); toast('已收藏'); }
+  store.set('slz_favs',favs); openArticle(aid,false);
+}
+function savePrefs(){
+  store.set('slz_prefs',{elec:num('prefElec'),pue:num('prefPue'),days:num('prefDays')});
+  applyPrefs(); toast('偏好已保存');
+}
+function applyPrefs(){
+  const p=store.get('slz_prefs',null); if(!p)return;
+  $('prefElec').value=p.elec; $('prefPue').value=p.pue; $('prefDays').value=p.days;
+  $('pPrice').value=p.elec; $('pPue').value=p.pue; $('pDays').value=p.days;
+  $('qcPrice').value=p.elec; $('qcPue').value=p.pue;
+  $('tDays').value=p.days; $('aDays').value=p.days;
+}
+
+/* ================= 快测 ================= */
+function calcQA(){
+  const m=getModel($('qaModel')), req=num('qaReq'), tin=num('qaIn'), tout=num('qaOut');
+  const inT=req*tin*30, outT=req*tout*30, mon=inT/1e6*m.in+outT/1e6*m.out;
+  $('qaCost').innerHTML=fmtY(mon)+'<span class="unit">/ 月</span>';
+  $('qaTok').textContent=fmtTok(inT+outT)+' tokens';
+  $('qaMon').textContent=fmtY(mon); $('qaYear').textContent=fmtY(mon*12);
+}
+const qaSummary=()=>[['模型',getModel($('qaModel')).name],['日请求',num('qaReq')],['输入/输出',num('qaIn')+'/'+num('qaOut')+' tok'],['月费用',$('qaMon').textContent],['年费用',$('qaYear').textContent]];
+function calcQB(){
+  const m=getModel($('qbModel')), s=num('qbSteps'), c=num('qbCalls'), tin=num('qbIn'), tout=num('qbOut'), tasks=num('qbTasks');
+  const calls=s*c, inT=calls*tin, outT=calls*tout;
+  const per=inT/1e6*m.in+outT/1e6*m.out;
+  $('qbCost').innerHTML=fmtY2(per)+'<span class="unit">/ 任务</span>';
+  $('qbTok').textContent=fmtTok(inT+outT)+' tokens';
+  $('qbAmp').textContent=calls+' 倍（'+calls+' 次调用）';
+  $('qbMon').textContent=fmtY(per*tasks*30);
+}
+const qbSummary=()=>[['模型',getModel($('qbModel')).name],['步骤×调用',num('qbSteps')+'×'+num('qbCalls')],['单任务成本',$('qbCost').textContent.replace('/ 任务','')],['月成本',$('qbMon').textContent]];
+function calcQC(){
+  const cnt=num('qcCnt'), tdp=num('qcTdp'), price=num('qcPrice'), pue=Math.max(1,num('qcPue'));
+  const kwh=cnt*tdp/1000*pue*24*30, cost=kwh*price;
+  $('qcCost').innerHTML=fmtY(cost)+'<span class="unit">/ 月</span>';
+  $('qcKwh').textContent=Math.round(kwh).toLocaleString()+' 度';
+  $('qcYear').textContent=fmtY(cost*12);
+}
+const qcSummary=()=>[['GPU',num('qcCnt')+' 张 × '+num('qcTdp')+'W'],['电价/PUE',num('qcPrice')+' 元 / '+num('qcPue')],['月电费',$('qcCost').textContent.replace('/ 月','')],['年电费',$('qcYear').textContent]];
+
+/* ================= 工具：Token ================= */
+function tFill(){ const m=getModel($('tModel')); $('tPin').value=m.in; $('tPout').value=m.out; calcToken(); }
+function calcToken(){
+  const pin=num('tPin'), pout=num('tPout'), tin=num('tIn'), tout=num('tOut'), req=num('tReq'), days=Math.max(1,num('tDays'));
+  const per=(tin*pin+tout*pout)/1e6, day=per*req, mon=day*days;
+  const cin=tin*pin/1e6*req*days, cout=tout*pout/1e6*req*days;
+  $('tCost').innerHTML=fmtY(mon)+'<span class="unit">/ 月</span>';
+  $('tPer').textContent=fmtY2(per); $('tDay').textContent=fmtY(day); $('tYearV').textContent=fmtY(mon*12);
+  const ri=mon?Math.round(cin/mon*100):0;
+  $('tRatio').textContent=ri+'% / '+(100-ri)+'%';
+  $('tCin').textContent=fmtY(cin); $('tCout').textContent=fmtY(cout);
+  const mx=Math.max(cin,cout,1);
+  $('tBarIn').style.width=Math.max(6,cin/mx*100)+'%'; $('tBarOut').style.width=Math.max(6,cout/mx*100)+'%';
+}
+const tSummary=()=>[['单价（入/出）',num('tPin')+'/'+num('tPout')+' 元/百万'],['日请求',num('tReq')],['月成本',$('tCost').textContent.replace('/ 月','')],['年成本',$('tYearV').textContent],['输入/输出占比',$('tRatio').textContent]];
+
+/* ================= 工具：Agent ================= */
+function calcAgent(){
+  const m=getModel($('aModel'));
+  const steps=Math.max(1,num('aSteps')), calls=Math.max(1,num('aCalls')), ctx=num('aCtx'), out=num('aOut'),
+        tasks=num('aTasks'), days=Math.max(1,num('aDays'));
+  let inTok=0;
+  for(let i=0;i<steps;i++) inTok += (ctx + i*out)*calls;
+  const outTok=steps*calls*out;
+  const per=inTok/1e6*m.in+outTok/1e6*m.out;
+  const single=ctx/1e6*m.in+out/1e6*m.out;
+  $('aCost').innerHTML=fmtY2(per)+'<span class="unit">/ 任务</span>';
+  $('aTok').textContent=fmtTok(inTok+outTok)+' tokens';
+  $('aSplit').textContent=fmtTok(inTok)+' / '+fmtTok(outTok);
+  $('aAmp').textContent='≈ '+Math.round(per/Math.max(single,1e-9))+' 倍单次调用';
+  $('aDay').textContent=fmtY(per*tasks);
+  $('aMonth').textContent=fmtY(per*tasks*days);
+}
+const aSummary=()=>[['模型',getModel($('aModel')).name],['步骤×调用',num('aSteps')+'×'+num('aCalls')],['单任务成本',$('aCost').textContent.replace('/ 任务','')],['放大倍数',$('aAmp').textContent],['月成本',$('aMonth').textContent]];
+
+/* ================= 工具：GPU ================= */
+function gFill(){ $('gMem').value=getCard($('gCard')).mem; calcGpu(); }
+function calcGpu(){
+  const mem=Math.max(1,num('gMem'));
+  const size=parseFloat(segVal('gSizeSeg')), bpp=parseFloat(segVal('gQuantSeg'));
+  const conc=Math.max(1,num('gConc')), red=num('gRed')/100;
+  const wMem=size*bpp*1.1;
+  const kvPer=size*0.016*(bpp===2?1:0.7);
+  const kvMem=conc*kvPer+2;
+  const total=wMem+kvMem, usable=mem*0.9;
+  const nMin=Math.ceil(total/usable);
+  const nMax=Math.ceil(total*(1+red)/usable);
+  $('gCount').innerHTML=(nMin===nMax?nMin:nMin+' ~ '+nMax)+'<span class="unit">张（估算区间）</span>';
+  $('gW').textContent=wMem.toFixed(1)+' GB';
+  $('gKV').textContent=kvMem.toFixed(1)+' GB';
+  $('gTotal').textContent=total.toFixed(1)+' GB';
+  $('gMin').textContent=nMin+' 张';
+  $('gMax').textContent=nMax+' 张（含 '+Math.round(red*100)+'% 冗余）';
+  $('gServer').textContent=Math.ceil(nMax/8)+' 台（8 卡整机）';
+}
+const gSummary=()=>[['参数量/精度',segVal('gSizeSeg')+'B / '+({2:'FP16',1:'INT8',0.5:'INT4'})[segVal('gQuantSeg')]],['并发',num('gConc')],['张数区间',$('gMin').textContent+' ~ '+$('gMax').textContent],['整机',$('gServer').textContent]];
+
+/* ================= 工具：电力 ================= */
+function pFill(){ $('pTdp').value=getCard($('pCard')).tdp; calcPower(); }
+function calcPower(){
+  const cnt=num('pCount'), tdp=num('pTdp'), other=num('pOther'),
+        hrs=Math.min(24,Math.max(1,num('pHours'))), days=Math.max(1,num('pDays')),
+        price=num('pPrice'), pue=Math.max(1,num('pPue'));
+  const itKw=(cnt*tdp+other)/1000, totKw=itKw*pue;
+  const dayKwh=totKw*hrs, monKwh=dayKwh*days, cost=monKwh*price;
+  $('pCost').innerHTML=fmtY(cost)+'<span class="unit">/ 月</span>';
+  $('pItKw').textContent=itKw.toFixed(2)+' kW';
+  $('pTotKw').textContent=totKw.toFixed(2)+' kW';
+  $('pDayKwh').textContent=Math.round(dayKwh).toLocaleString()+' 度';
+  $('pKwh').textContent=Math.round(monKwh).toLocaleString()+' 度';
+  $('pYear').textContent=fmtY(cost*12);
+}
+const pSummary=()=>[['GPU',num('pCount')+' 张 × '+num('pTdp')+'W'],['运行',num('pHours')+'h × '+num('pDays')+'天'],['电价/PUE',num('pPrice')+' 元 / '+num('pPue')],['月电费',$('pCost').textContent.replace('/ 月','')],['年电费',$('pYear').textContent]];
+
+/* ================= 工具：对比 ================= */
+function calcCompare(){
+  const api=num('cApi'), cnt=num('cCnt'), price=num('cPrice'), dep=Math.max(1,num('cDep')),
+        elec=num('cElec'), host=num('cHost'), ops=num('cOps'), net=num('cNet');
+  const depM=cnt*price/dep, opx=elec+host+ops+net, self=depM+opx;
+  $('cApiV').textContent=fmtY(api)+' / 月';
+  $('cSelfV').textContent=fmtY(self)+' / 月';
+  const mx=Math.max(api,self,1);
+  $('cApiBar').style.width=Math.max(6,api/mx*100)+'%';
+  $('cSelfBar').style.width=Math.max(6,self/mx*100)+'%';
+  $('cDepV').textContent=fmtY(depM);
+  $('cOpxV').textContent=fmtY(opx);
+  $('cSelfM').textContent=fmtY(self);
+  $('cSelfY').textContent=fmtY(self*12);
+  $('cDiff').textContent=fmtY(Math.abs(api-self));
+}
+const cSummary=()=>[['API 月成本',fmtY(num('cApi'))],['自建月成本',$('cSelfM').textContent],['硬件月摊销',$('cDepV').textContent],['月差额',$('cDiff').textContent]];
+
+/* ================= 参数库 ================= */
+function renderParams(){
+  $('paramModels').innerHTML='<tr><th>模型</th><th>输入</th><th>输出</th></tr>'+
+    MODELS.map(m=>`<tr><td><b>${m.name}</b></td><td>¥${m.in}</td><td>¥${m.out}</td></tr>`).join('');
+  $('paramCards').innerHTML='<tr><th>型号</th><th>显存</th><th>功耗</th><th>参考价</th></tr>'+
+    CARDS.map(c=>`<tr><td><b>${c.name.split(' ·')[0]}</b></td><td>${c.mem}G</td><td>${c.tdp}W</td><td>${fmtY(c.price)}</td></tr>`).join('');
+}
+
+/* ================= 资讯渲染 ================= */
+const artById=id=>ARTICLES.find(a=>a.id===id);
+function coverHtml(a,cls){ return `<div class="cover ${cls||''}" style="background:${COVERS[a.cover]}">
+  <div class="cv-grid"></div><div class="cv-tag">${a.tag}</div><span class="i3d" data-i="${a.icon}"></span></div>`; }
+function newsCard(a){ return `<div class="news-card" onclick="openArticle('${a.id}')">${coverHtml(a)}
+  <div class="n-body"><div class="n-title">${a.title}</div>
+  <div class="n-meta"><span>算力栈公众号</span><span>${a.date}</span></div></div></div>`; }
+function newsRow(a){ return `<div class="news-row" onclick="openArticle('${a.id}')">${coverHtml(a)}
+  <div class="nr-body"><div class="nr-title">${a.title}</div><div class="nr-sum">${a.sum}</div>
+  <div class="nr-meta"><span>${a.date}</span><span>${a.mins} 分钟</span><span class="tagchip">${a.tag}</span></div></div></div>`; }
+function topicCard(t){ return `<div class="topic-card" style="background:${COVERS[t.cover]}" onclick="openTopic('${t.id}')">
+  <div class="cv-grid"></div><div class="t-name">${t.name}</div><div class="t-n">${t.arts.length} 篇 · 专题</div>
+  <span class="i3d" data-i="${t.icon}"></span></div>`; }
+
+let newsTag='全部';
+function renderNewsChips(){
+  $('newsChips').innerHTML=TAGS.map(t=>`<div class="chip ${t===newsTag?'on':''}" onclick="newsTag='${t}';renderNews();renderNewsChips()">${t}</div>`).join('');
+}
+function renderNews(){
+  const q=($('newsSearch').value||'').trim().toLowerCase();
+  let list=ARTICLES.filter(a=>(newsTag==='全部'||a.tag===newsTag));
+  if(q) list=list.filter(a=>(a.title+a.sum+a.tag).toLowerCase().includes(q));
+  $('newsList').innerHTML=list.length?list.map(newsRow).join(''):'<div class="empty">没有匹配的文章</div>';
+  hydrateIcons($('newsList'));
+}
+function openArticle(id,push=true){
+  const a=artById(id); if(!a)return;
+  const favs=store.get('slz_favs',[]);
+  const fav=favs.includes(id);
+  $('artBox').innerHTML=`
+    <div class="art-cover" style="background:${COVERS[a.cover]}"><div class="cv-grid"></div><span class="i3d" data-i="${a.icon}"></span></div>
+    <div class="art-title">${a.title}</div>
+    <div class="art-meta"><span class="src">算力栈公众号</span><span>${a.date}</span><span>${a.mins} 分钟阅读</span>
+      <span class="tagchip">${a.tag}</span>
+      <span class="art-fav" onclick="toggleFav('${a.id}')">${fav?'★ 已收藏':'☆ 收藏'}</span></div>
+    <div class="art-body">${a.body}</div>
+    <div class="card"><div class="card-title">相关工具</div>
+      ${a.tools.map(t=>`<div class="kn-item" onclick="go('${t[0]}')">🧮 ${t[1]}</div>`).join('')}</div>
+    <div class="card"><div class="card-title">相关文章</div>
+      ${a.rel.map(r=>{const ra=artById(r);return ra?newsRow(ra):'';}).join('')}</div>
+    <div class="footer-quote">本文仅用于行业知识分享，不构成投资、采购或交易建议。<br>原文来源：算力栈公众号 · ${a.date}</div>`;
+  if(push) go('article'); else show('article');
+  hydrateIcons($('artBox'));
+}
+function openTopic(id){
+  const t=TOPICS.find(x=>x.id===id); if(!t)return;
+  $('topicBox').innerHTML=`
+    <div class="art-cover" style="background:${COVERS[t.cover]};height:110px"><div class="cv-grid"></div><span class="i3d" data-i="${t.icon}"></span></div>
+    <div class="art-title" style="font-size:17px">${t.name}</div>
+    <div class="art-meta"><span class="src">专题</span><span>${t.arts.length} 篇文章</span></div>
+    ${t.arts.map(aid=>{const a=artById(aid);return a?newsRow(a):'';}).join('')}
+    <div class="footer-quote">本专题仅用于行业知识分享，不构成投资、采购或交易建议。</div>`;
+  go('topic'); hydrateIcons($('topicBox'));
+}
+
+/* ================= 首页渲染 ================= */
+function renderHome(){
+  $('homeNews').innerHTML=ARTICLES.slice(0,4).map(newsCard).join('');
+  $('homeTopics').innerHTML=TOPICS.slice(0,2).map(topicCard).join('');
+  const recent=[...ARTICLES].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
+  $('homeRecent').innerHTML=recent.map(newsRow).join('');
+  hydrateIcons();
+}
+
+/* ================= 我的 ================= */
+function renderMe(){
+  const reports=store.get('slz_reports',[]);
+  $('meReports').innerHTML=reports.length?reports.map(r=>`
+    <div class="report-item"><div class="rp-t"><span>${r.tool}</span><span class="rp-time">${r.time}</span></div>
+    <div class="rp-v">${r.rows.map(x=>x[0]+'：<b>'+x[1]+'</b>').join('　·　')}</div>
+    <div class="rp-del" onclick="delReport(${r.id})">删除</div></div>`).join('')
+    :'<div class="empty">还没有保存的报告<br>在任意测算结果下点「保存报告」即可归档</div>';
+  const favs=store.get('slz_favs',[]).map(artById).filter(Boolean);
+  $('meFavs').innerHTML=favs.length?favs.map(newsRow).join(''):'<div class="empty">还没有收藏的文章<br>在文章详情页点「☆ 收藏」</div>';
+  hydrateIcons($('meFavs'));
+}
+
+/* ================= 初始化 ================= */
+fillModels($('qaModel')); fillModels($('qbModel')); fillModels($('tModel')); fillModels($('aModel'));
+fillCards($('gCard')); fillCards($('pCard'));
+$('qaModel').value='ds-v3'; $('qbModel').value='ds-v3'; $('tModel').value='ds-v3'; $('aModel').value='ds-v3';
+$('gCard').value='h100'; $('gMem').value=80;
+$('pCard').value='h100'; $('pTdp').value=700;
+bindSeg('gSizeSeg',calcGpu); bindSeg('gQuantSeg',calcGpu);
+bindSeg('quickSeg',v=>{ ['qa','qb','qc'].forEach(x=>$('quick-'+x).style.display=x===v?'block':'none'); });
+applyPrefs();
+calcQA(); calcQB(); calcQC(); calcToken(); calcAgent(); calcGpu(); calcPower(); calcCompare();
+renderParams(); renderNewsChips(); renderNews(); renderHome();
+hydrateIcons();
+</script>
+</body>
+</html>
